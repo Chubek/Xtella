@@ -1,98 +1,187 @@
 grammar JKipp;
 
-options {
-    output=AST;
-    ASTLabelType=CommonTree;
-}
+type
+    : 'string'
+    | 'int'
+    | 'float'
+    | 'symbol'
+    | identifier
+    ;
 
-root: program EOF;
+sigil
+    : '$'
+    | '@'
+    | '%'
+    ;
 
-program: ^( statement | functionDeclaration )+;
+hashLiteral
+    : '{' keyVal (',' keyVal)* '}'
+    ;
 
-statement: ^( variableAssignment
-            | assignment
-            | ifStatement
-            | foreachStatement
-            | forStatement
-            | whileStatement
-            | unlessStatement
-            | functionCall
-            | datatypeDeclaration
-            | deleteStatement
-            );
+keyVal
+    : identifier ':' expression
+    ;
 
-sigil: '$' | '%' | '@';
+listLiteral
+    : '[' expression (',' expression)* ']'
+    ;
 
-pipeSeparatedStatement: '|' statement+ ('|' statement+ )*;
+regexLiteral
+    : /\/.*\//
+    ;
 
-paramsDeclaration: identifier (' ' identifier)*;
+quotedString
+    : '"' (~["\\"] | '\\' .)* '"'
+    | '\'' (~["\\"] | '\\' .)* '\''
+    ;
 
-functionDeclaration: ^(LET identifier (paramsDeclaration)? 'begin' pipeSeparatedStatement+ ('==>' expr)? 'end;;' );
+shellCommand
+    : '`' .*? '`'
+    ;
 
-variableDeclaration: ^(identifier (':=' expression ';')?);
+ioIdentifier
+    : '<STDIN>'
+    | '<STDOUT>'
+    | '<STDERR>'
+    ;
 
-variableAssignment: ^('=' sigil identifier expression ';');
+datatypeDeclaration
+    : 'datatype' typeName '=' variantList ';'
+    ;
 
-indexedAssignment: ^('=' '&' identifier '[' expression ']' expression ';' );
+variantList
+    : variant ('|' variant)*
+    ;
 
-assignment: ^(variableAssignment | indexedAssignment);
+variant
+    : constructor ('of' type (',' type)*)?
+    ;
 
-deleteStatement: ^(DELETE sigil identifier);
+constructor
+    : identifier
+    ;
 
-ifStatement: ^('if' expression 'then' program ('else' program)? 'end');
+lambda
+    : 'fn' '(' paramList ')' '=>' expression
+    ;
 
-forStatement: ^('for' (variableDeclaration | assignment)
-            expression
-            (variableDeclaration | assignment)
-            'do' program 'end');
+paramList
+    : identifier (',' identifier)*
+    ;
 
-whileStatement: ^('while' expression 'do' program 'end');
+recordDeclaration
+    : 'record' identifier '{' fieldList '}'
+    ;
 
-unlessStatement: ^('unless' expression 'do' program 'end');
+fieldList
+    : field (',' field)*
+    ;
 
-foreachStatement: ^('foreach' identifier 'in' iterable 'do' program 'end');
+field
+    : identifier ':' type
+    ;
 
-functionCall: ^('&' identifier '(' argumentList? ')' ';');
+functionDeclaration
+    : 'let' identifier '(' paramList ')' ':=' expression 'in' expression 'end'
+    ;
 
-expression: ^(binaryOperator primaryExpression primaryExpression)?;
+matchExpression
+    : 'match' expression 'with' matchCaseList 'end'
+    ;
 
-primaryExpression: ^(identifier | constant | functionCall | '(' expression ')');
+matchCaseList
+    : matchCase ('|' matchCase)*
+    ;
 
-binaryOperator: ^('+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=');
+matchCase
+    : pattern '=>' expression
+    ;
 
-iterable: ^('[' expression* ']');
+shellPattern: (patternElement | ESCAPE_CHAR .)+;
 
-argumentList: ^(expression expression*);
+patternElement: QUESTION_MARK | ASTERISK | L_BRACKET bracketContent R_BRACKET | ANY_CHAR;
 
-itemMapping: ^('=>' identifier expression);
+bracketContent: (bracketElement | ESCAPE_CHAR .)+;
 
-hashLiteral: ^('(' itemMapping* ')');
+bracketElement: CHAR_RANGE | CHAR;
 
-listLiteral: ^('{' expression* '}');
+subSeparator: '%%' | '%' | '#' | '##' | ':=' | ':?' : ':+' | ':-';
 
-constant: ^(INTEGER | STRING | hashLiteral | listLiteral);
+parameterSubstitution
+    : '$' identifier
+    | '${' identifier (supSeparator shellPattern)? '}'
+    ;
 
-datatypeDeclaration: ^(DATATYPE identifier constructorList);
+stringFormatting
+    : 'printf' '(' quotedString (',' expression)* ')'
+    ;
 
-constructorList: ^(constructor (constructor)*);
+quoteParamName: 'ident' | 'tyy' | 'block' | 'expr' | 'const' | 'var';
 
-constructor: ^('of' identifierList);
+quoteParam: '.' identifier ':' quoteParamName;
 
-identifierList: ^(identifier (identifier)*);
+quoteParams: quoteParam (',' quoteParam)*;
 
-identifier: [a-zA-Z_][a-zA-Z0-9_]*;
+unquoteParam: '.' identifier ':' expression;
 
-INTEGER: [0-9]+;
+unquoteParams: unquoteParam (',' unquoteParam)*;
 
-STRING: '"' .*? '"';
+macro
+    : 'quote' identifier '!' '{{' quoteParams '}}'; 
+    | 'unquote' identifier '!' '{{' unquoteParams '}}';
+    ;
 
-DATATYPE: 'datatype';
+expression
+    : ioIdentifier
+    | type
+    | variableDeclaration
+    | variableAssignment
+    | hashLiteral
+    | listLiteral
+    | regexLiteral
+    | quotedString
+    | shellCommand
+    | datatypeDeclaration
+    | lambda
+    | recordDeclaration
+    | functionDeclaration
+    | matchExpression
+    | parameterSubstitution
+    | stringFormatting
+    | macro
+    | '(' expression ')'
+    | expression binaryOperator expression
+    ;
 
-DELETE: 'delete';
+variableDeclaration
+    : sigil identifier ':=' expression ';'
+    ;
 
-LET: 'let';
+variableAssignment
+    : sigil identifier '=' expression ';'
 
-WS: [ \t\r\n]+ -> skip;
+binaryOperator
+    : '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=' 
+    | '+='| '-='| '*='| '/='| '%='| 
+    ;
 
-COMMENT: '#' .*? '\r'? '\n' -> skip;
+identifier
+    :  IDENT;
+
+startRule
+    : expression EOF ;
+
+
+CHAR_RANGE: CHAR '-' CHAR;
+
+QUESTION_MARK: '?';
+ASTERISK: '*';
+L_BRACKET: '[';
+R_BRACKET: ']';
+ANY_CHAR: '.';
+ESCAPE_CHAR: '\\';
+
+CHAR: [a-zA-Z0-9_];
+IDENT: [a-zA-Z_] [a-zA-Z0-9_]*;
+
 
