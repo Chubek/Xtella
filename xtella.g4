@@ -1,4 +1,4 @@
-grammar JKipp;
+grammar Xtella;
 
 type
     : 'string'
@@ -45,15 +45,9 @@ hexEscape
 unicodeEscape
     : '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
 
-
 quotedString
-    : '"' (~["\\"] 
-    | escapeSequence
-    | '\\' 
-    .)* '"'
-    | '\'' (~["\\"] 
-    | escapeSequence
-    | '\\' .)* '\''
+    : '"' (~["\\"] | escapeSequence | '\\' .)* '"'
+    | '\'' (~["\\"] | escapeSequence | '\\' .)* '\''
     ;
 
 shellCommand
@@ -111,20 +105,28 @@ matchExpression
     ;
 
 matchCaseList
-    : matchCase ('|' matchCase)*
+    : matchCase ('|' matchCase )*
     ;
 
 matchCase
     : pattern '=>' expression
     ;
 
-shellPattern: ( patternElement | '\\' .)+;
+shellPattern
+    : ( patternElement | '\\' .)+
+    ;
 
-patternElement: '?' | '*' |'[' bracketContent ']' | '.';
+patternElement
+    : '?' | '*' |'[' bracketContent ']' | '.'
+    ;
 
-bracketContent: (bracketElement | '\\' .)+;
+bracketContent
+    : (bracketElement | '\\' .)+
+    ;
 
-bracketElement: CHAR '-' CHAR | CHAR;
+bracketElement
+    : CHAR '-' CHAR | CHAR
+    ;
 
 subSeparator
     : '%%' 
@@ -150,31 +152,44 @@ stringFormatting
     : 'printf' '(' quotedString (',' expression)* ')'
     ;
 
-quoteParamName: 'ident' | 'tyy' | 'block' | 'expr' | 'const' | 'var';
-
-quoteParam: '.' identifier ':' quoteParamName;
-
-quoteParams: quoteParam (',' quoteParam)*;
-
-unquoteParam: '.' identifier ':' expression;
-
-unquoteParams: unquoteParam (',' unquoteParam)*;
-
-macro
-    : 'quote' identifier '!' '{{' quoteParams '}}'; 
-    | 'unquote' identifier '!' '{{' unquoteParams '}}';
+quoteParamName
+    : 'ident' | 'tyy' | 'block' | 'expr' | 'const' | 'var'
     ;
 
-arguments: identifier (',' identifier )*;
+quoteParam
+    : '.' identifier ':' quoteParamName
+    ;
+
+quoteParams
+    : quoteParam (',' quoteParam)*
+    ;
+
+unquoteParam
+    : '.' identifier ':' expression
+    ;
+
+unquoteParams
+    : unquoteParam (',' unquoteParam)*
+    ;
+
+macro
+    : 'quote' identifier '!' '{{' quoteParams '}}'
+    | 'unquote' identifier '!' '{{' unquoteParams '}}'
+    ;
+
+arguments
+    : identifier (',' identifier )*
+    ;
 
 integerLiteral
     : [0-9]+
-    | [0xX] HEX_DIGI
+    | [0xX] HEX_DIGIT+
     | [0bB] [0-1]+
     | [0oO] [0-7]+
     ;
 
-floatLiteral: [0-9]+ ('.' [0-9]+)?;
+floatLiteral
+    : [0-9]+ ('.' [0-9]+)?;
 
 expression
     : ioIdentifier
@@ -207,6 +222,7 @@ variableDeclaration
 
 variableAssignment
     : sigil identifier '=' expression ';'
+    ;
 
 binaryOperator
     : '+' | '-' | '*' 
@@ -229,6 +245,7 @@ IDENT: [a-zA-Z_] [a-zA-Z0-9_]*;
 
 WS: [ \t\r\n]+ -> skip;
 
-HEX_DIGIT: [0-9a-fA-F];
+HEX_DIGIT: [0-9a-fA-F]+;
 
 COMMENT: '#' .*? '\r'? '\n' -> skip;
+
