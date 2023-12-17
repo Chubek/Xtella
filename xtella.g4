@@ -30,9 +30,30 @@ regexLiteral
     : /\/.*\//
     ;
 
+escapeSequence
+    : '\\' (simpleEscape | octalEscape | hexEscape | unicodeEscape);
+
+simpleEscape
+    : [abfnrtv'"\?\\];
+
+octalEscape
+    : '\\' [0-7] [0-7]? [0-7]?;
+
+hexEscape
+    : '\\' 'x' HEX_DIGIT HEX_DIGIT;
+
+unicodeEscape
+    : '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
+
+
 quotedString
-    : '"' (~["\\"] | '\\' .)* '"'
-    | '\'' (~["\\"] | '\\' .)* '\''
+    : '"' (~["\\"] 
+    | escapeSequence
+    | '\\' 
+    .)* '"'
+    | '\'' (~["\\"] 
+    | escapeSequence
+    | '\\' .)* '\''
     ;
 
 shellCommand
@@ -97,19 +118,32 @@ matchCase
     : pattern '=>' expression
     ;
 
-shellPattern: (patternElement | ESCAPE_CHAR .)+;
+shellPattern: ( patternElement | '\\' .)+;
 
-patternElement: QUESTION_MARK | ASTERISK | L_BRACKET bracketContent R_BRACKET | ANY_CHAR;
+patternElement: '?' | '*' |'[' bracketContent ']' | '.';
 
-bracketContent: (bracketElement | ESCAPE_CHAR .)+;
+bracketContent: (bracketElement | '\\' .)+;
 
-bracketElement: CHAR_RANGE | CHAR;
+bracketElement: CHAR '-' CHAR | CHAR;
 
-subSeparator: '%%' | '%' | '#' | '##' | ':=' | ':?' : ':+' | ':-';
+subSeparator
+    : '%%' 
+    | '%' 
+    | '#' 
+    | '##' 
+    | ':=' 
+    | ':?' 
+    | ':+' 
+    | ':-'
+    | '-'
+    | '+'
+    | '?'
+    | '='
+    ;
 
 parameterSubstitution
     : '$' identifier
-    | '${' identifier (supSeparator shellPattern)? '}'
+    | '${' identifier (subSeparator shellPattern)? '}'
     ;
 
 stringFormatting
@@ -131,6 +165,17 @@ macro
     | 'unquote' identifier '!' '{{' unquoteParams '}}';
     ;
 
+arguments: identifier (',' identifier )*;
+
+integerLiteral
+    : [0-9]+
+    | [0xX] HEX_DIGI
+    | [0bB] [0-1]+
+    | [0oO] [0-7]+
+    ;
+
+floatLiteral: [0-9]+ ('.' [0-9]+)?;
+
 expression
     : ioIdentifier
     | type
@@ -143,6 +188,8 @@ expression
     | shellCommand
     | datatypeDeclaration
     | lambda
+    | integerLiteral
+    | floatLiteral
     | recordDeclaration
     | functionDeclaration
     | matchExpression
@@ -150,7 +197,8 @@ expression
     | stringFormatting
     | macro
     | '(' expression ')'
-    | expression binaryOperator expression
+    | '&' identifier '(' arguments? ')'
+    | expression (binaryOperator expression)?
     ;
 
 variableDeclaration
@@ -161,8 +209,12 @@ variableAssignment
     : sigil identifier '=' expression ';'
 
 binaryOperator
-    : '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=' 
-    | '+='| '-='| '*='| '/='| '%='| 
+    : '+' | '-' | '*' 
+    | '/' | '%' | '==' 
+    | '!='| '<' | '>' 
+    | '<='| '>='| '+='
+    | '-='| '*='| '/='
+    | '%='| '@' | '^' 
     ;
 
 identifier
@@ -172,16 +224,11 @@ startRule
     : expression EOF ;
 
 
-CHAR_RANGE: CHAR '-' CHAR;
-
-QUESTION_MARK: '?';
-ASTERISK: '*';
-L_BRACKET: '[';
-R_BRACKET: ']';
-ANY_CHAR: '.';
-ESCAPE_CHAR: '\\';
-
 CHAR: [a-zA-Z0-9_];
 IDENT: [a-zA-Z_] [a-zA-Z0-9_]*;
 
+WS: [ \t\r\n]+ -> skip;
 
+HEX_DIGIT: [0-9a-fA-F];
+
+COMMENT: '#' .*? '\r'? '\n' -> skip;
