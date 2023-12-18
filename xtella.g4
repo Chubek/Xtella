@@ -9,9 +9,10 @@ type
     ;
 
 sigil
-    : '$'
-    | '@'
-    | '%'
+    : SIGIL_VAR
+    | SIGIL_ARR
+    | SIGIL_HASH
+    | SIGIL_CHAN
     ;
 
 hashLiteral
@@ -26,8 +27,23 @@ listLiteral
     : '[' expression (',' expression)* ']'
     ;
 
+tupleLiteral
+    : '(' expression (',' expression)* ')'
+    ;
+
 regexLiteral
     : /\/.*\//
+    ;
+
+character
+    : '#\' [!-~]
+    | '#\newline'
+    | '#\tab'
+    | '#\space'
+    | '#\return'
+    | '#\bell'
+    | '#\U+'[0-9]+
+    | '#\x' [0-9a-fA-F]+
     ;
 
 escapeSequence
@@ -97,7 +113,11 @@ field
     ;
 
 functionDeclaration
-    : 'let' identifier '(' paramList ')' ':=' expression 'in' expression 'end'
+    : (LET|LETREC|LETSEQ) identifier '(' paramList ')' ':=' 
+    (
+       expression 'in' expression 'end;;'
+       | expression*
+    )+
     ;
 
 matchExpression
@@ -191,6 +211,23 @@ integerLiteral
 floatLiteral
     : [0-9]+ ('.' [0-9]+)?;
 
+channel:
+    : identifier '<--' expression
+    | expression '-->' identifier
+    ;
+
+functionCall
+    : '&' identifier '(' arguments? ')'
+    ;
+
+binaryOperation
+    : expression (binaryOperator expression)?
+    ;
+
+concurrentEval
+     : 'eval!' '{' expression '}'
+     ;
+
 expression
     : ioIdentifier
     | type
@@ -212,16 +249,18 @@ expression
     | stringFormatting
     | macro
     | '(' expression ')'
-    | '&' identifier '(' arguments? ')'
-    | expression (binaryOperator expression)?
+    | functionCall
+    | channel
+    | binaryOperation
+    | concurrentEval
     ;
 
 variableDeclaration
-    : sigil identifier ':=' expression ';'
+    : sigil identifier ':=' expression ';;'
     ;
 
 variableAssignment
-    : sigil identifier '=' expression ';'
+    : sigil identifier '=' expression ';;'
     ;
 
 binaryOperator
@@ -230,7 +269,9 @@ binaryOperator
     | '!='| '<' | '>' 
     | '<='| '>='| '+='
     | '-='| '*='| '/='
-    | '%='| '@' | '^' 
+    | '%='| '@' | '^'
+    | '||'| '&&'| '|'
+    | '&' | '**'| '@'
     ;
 
 identifier
@@ -249,3 +290,12 @@ HEX_DIGIT: [0-9a-fA-F]+;
 
 COMMENT: '#' .*? '\r'? '\n' -> skip;
 
+LET: 'let';
+LETREC: 'letrect';
+LETSEQ: 'let*';
+
+
+SIGIL_VAR: '$';
+SIGIL_ARR: '@';
+SIGIL_HASH: '%';
+SIGIL_CHAN: '>';
