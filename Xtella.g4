@@ -1,5 +1,9 @@
 grammar Xtella;
 
+identifier
+    :  IDENT
+    ;
+
 typeName
     : 'string'
     | 'int'
@@ -84,6 +88,7 @@ ioIdentifier
     : STDIN
     | STDOUT
     | STDERR
+    | '<DOCUMENT>'
     | '<' ALL_CAPS* '>'
     ;
 
@@ -121,26 +126,6 @@ fieldList
 
 field
     : identifier ':' typeName
-    ;
-
-functionDeclaration
-    : ( LET | LETREC | LETSEQ ) identifier '(' paramList ')' ':=' 
-    (
-       expression 'in' expression 'end;;'
-       | expression
-    )+
-    ;
-
-matchExpression
-    : MATCH expression 'with' matchCaseList 'end'
-    ;
-
-matchCaseList
-    : matchCase ('|' matchCase )*
-    ;
-
-matchCase
-    : shellPattern '=>' expression
     ;
 
 shellPattern
@@ -184,7 +169,8 @@ stringFormatting
     ;
 
 quoteParamName
-    : 'ident' | 'tyy' | 'block' | 'expr' | 'const' | 'var'
+    : 'ident' | 'tyy' | 'block' | 'expr' 
+    | 'const' | 'var' | 'mac'   | 'chan'
     ;
 
 quoteParam
@@ -233,22 +219,43 @@ functionCall
     ;
 
 concurrentEval
-     : 'eval!' '{{' expression '}}'
-     ;
+    : '&eval!' '{{' expression '}}'
+    ;
+
+regexMatch
+    : regexLiteral '=~' expression
+    ;
+
+regexUnmatch
+    : regexLiteral '!=~' expression
+    ;
+
+lambdaEval
+    : '(' lambda ')' '!' '{{' arguments* '}}'
+    ;
+
+printExpression
+    : '>>>' ioIdentifier '!' '{{' expression '}}' 
+    ;
 
 primaryExpression
     : ioIdentifier
+    | printExpression
     | typeName
     | access
     | hashLiteral
     | listLiteral
     | regexLiteral
+    | regexMatch
+    | regexUnmatch
+    | character
     | string
     | shellCommand
+    | shellPattern
     | lambda
+    | lambdaEval
     | integerLiteral
     | floatLiteral
-    | matchExpression
     | parameterSubstitution
     | stringFormatting
     | macro
@@ -271,8 +278,8 @@ bitwiseExpression
     : unaryExpression '^' unaryExpression
     | unaryExpression '|' unaryExpression
     | unaryExpression '&' unaryExpression
-    | unaryExpression '>>' unaryExpression
-    | unaryExpression '<<' unaryExpression
+    | unaryExpression '=>' unaryExpression
+    | unaryExpression '=<' unaryExpression
     ;
 
 multExpression
@@ -317,18 +324,64 @@ variableAssignment
     : sigil access '=' expression ';;'
     ;
 
-identifier
-    :  IDENT
+
+ifStatement
+    : 'if' expression 'then' statement+ ( 'else' statement+ )? 'end'
+    ;
+
+elifStatement
+    : 'elif' expression 'then' statement+ 
+    ;
+
+forStatement
+    : 'for' expression 'in' expression 'do' statement+ 'done'
+    | 'for' (variableAssignment | variableDeclaration)* ';' expression ( ',' expression )*? ';' expression ( ',' expression )*? 'do' statement+ 'done'
+    ;
+
+whileStatement
+    : 'while' expression 'do' statement+ 'done'
+    | 'unless' expression 'do' statement+ 'done'
+    ;
+
+matchCase
+    : expression '->' statement+ ';;'
+    ;
+
+matchStatement
+    : 'match' expression 'with' matchCase ( '|' matchCase )*? 'end'
+    ;
+
+parameters
+    : identifier ( ',' identifier )*?
+    ;
+
+functionDeclaration
+    : 'let' identifier parameters? '='  statement+ ';;'
+    ;
+
+statement
+    : expression
+    | variableDeclaration
+    | variableAssignment
+    | forStatement
+    | ifStatement
+    | whileStatement
+    | matchCase
+    | functionDeclaration
+    | recordDeclaration
+    | datatypeDeclaration
+    | '{{' statement+ '}}'
     ;
 
 startRule
-    : expression EOF 
+    : statement+ EOF 
     ;
 
 INT: [0-9];
 
 
 ALL: . | [\n\r];
+
 
 ESC_SEQ: '\\'([abfnrtv'"?\\]|([0-7]{1,3})|('x'[0-9a-fA-F]+)|('u'[0-9a-fA-F]{4}));
 
@@ -338,10 +391,6 @@ IDENT: [a-zA-Z_][a-zA-Z0-9_]*;
 HEX_DIGIT: [0-9a-fA-F];
 BIN_DIGIT: [0-1];
 OCT_DIGIT: [0-7];
-
-LET: 'let';
-LETREC: 'letrect';
-LETSEQ: 'let*';
 
 CHAR_NEWLINE: '#\\newline';
 CHAR_TAB: '#\\tab';
@@ -358,7 +407,7 @@ STDIN: '<STDIN>';
 STDOUT: '<STDOUT>';
 STDERR: '<STDERR>';
 
-ALL_CAPS: [A-F];
+ALL_CAPS: [A-Z];
 
 MATCH: 'match';
 
