@@ -32,38 +32,24 @@ tupleLiteral
     ;
 
 regexLiteral
-    : /\/.*\//
+    : '/' ~SPACE '/'
     ;
 
 character
-    : '#\' [!-~]
-    | '#\newline'
-    | '#\tab'
-    | '#\space'
-    | '#\return'
-    | '#\bell'
-    | '#\U+'[0-9]+
-    | '#\x' [0-9a-fA-F]+
+    : '#\\' CHAR
+    | '#\\u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
+    | '#\\U' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
+    | '#\\x' HEX_DIGIT HEX_DIGIT?
+    | CHAR_NEWLINE
+    | CHAR_SPACE
+    | CHAR_RETURN
+    | CHAR_BELL
     ;
 
-escapeSequence
-    : '\\' (simpleEscape | octalEscape | hexEscape | unicodeEscape);
 
-simpleEscape
-    : [abfnrtv'"\?\\];
-
-octalEscape
-    : '\\' [0-7] [0-7]? [0-7]?;
-
-hexEscape
-    : '\\' 'x' HEX_DIGIT HEX_DIGIT;
-
-unicodeEscape
-    : '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
-
-quotedString
-    : '"' (~["\\"] | escapeSequence | '\\' .)* '"'
-    | '\'' (~["\\"] | escapeSequence | '\\' .)* '\''
+string
+    : '"' .* '"'
+    | '\'' .* '\''
     ;
 
 shellCommand
@@ -71,9 +57,10 @@ shellCommand
     ;
 
 ioIdentifier
-    : '<STDIN>'
-    | '<STDOUT>'
-    | '<STDERR>'
+    : STDIN
+    | STDOUT
+    | STDERR
+    | '<' ALL_CAPS* '>'
     ;
 
 datatypeDeclaration
@@ -113,7 +100,7 @@ field
     ;
 
 functionDeclaration
-    : (LET|LETREC|LETSEQ) identifier '(' paramList ')' ':=' 
+    : ( LET | LETREC | LETSEQ ) identifier '(' paramList ')' ':=' 
     (
        expression 'in' expression 'end;;'
        | expression*
@@ -121,7 +108,7 @@ functionDeclaration
     ;
 
 matchExpression
-    : 'match' expression 'with' matchCaseList 'end'
+    : MATCH expression 'with' matchCaseList 'end'
     ;
 
 matchCaseList
@@ -202,18 +189,19 @@ arguments
     ;
 
 integerLiteral
-    : [0-9]+
-    | [0xX] HEX_DIGIT+
-    | [0bB] [0-1]+
-    | [0oO] [0-7]+
+    : INT+
+    | ('0x' | '0X') HEX_DIGIT+
+    | ('0b' | '0B') BIN_DIGIT+
+    | ('0o' | '0O') OCT_DIGIT+
     ;
 
 floatLiteral
-    : [0-9]+ ('.' [0-9]+)?;
+    : INT+ ('.' INT+)?
+    ;
 
-channel:
-    : identifier '<--' expression
-    | expression '-->' identifier
+channel
+    : 'channel' identifier '!' '{{' expression '}}'
+    | 'channel' '{{' expression '}}' identifier '!'
     ;
 
 functionCall
@@ -225,7 +213,7 @@ binaryOperation
     ;
 
 concurrentEval
-     : 'eval!' '{' expression '}'
+     : 'eval!' '{{' expression '}}'
      ;
 
 expression
@@ -256,7 +244,7 @@ expression
     ;
 
 variableDeclaration
-    : sigil identifier ':=' expression ';;'
+    : identifier ':=' expression ';;'
     ;
 
 variableAssignment
@@ -275,27 +263,46 @@ binaryOperator
     ;
 
 identifier
-    :  IDENT;
+    :  IDENT
+    ;
 
 startRule
-    : expression EOF ;
+    : expression EOF 
+    ;
 
+INT: [0-9];
 
 CHAR: [a-zA-Z0-9_];
-IDENT: [a-zA-Z_] [a-zA-Z0-9_]*;
+IDENT: [a-zA-Z_][a-zA-Z0-9_]*;
 
-WS: [ \t\r\n]+ -> skip;
-
-HEX_DIGIT: [0-9a-fA-F]+;
-
-COMMENT: '#' .*? '\r'? '\n' -> skip;
+HEX_DIGIT: [0-9a-fA-F];
+BIN_DIGIT: [0-1];
+OCT_DIGIT: [0-7];
 
 LET: 'let';
 LETREC: 'letrect';
 LETSEQ: 'let*';
 
+CHAR_NEWLINE: '#\\newline';
+CHAR_TAB: '#\\tab';
+CHAR_RETURN: '#\\return';
+CHAR_BELL: '#\\bell';
+CHAR_SPACE: '#\\space';
 
 SIGIL_VAR: '$';
 SIGIL_ARR: '@';
 SIGIL_HASH: '%';
 SIGIL_CHAN: '>';
+
+STDIN: '<STDIN>';
+STDOUT: '<STDOUT>';
+STDERR: '<STDERR>';
+
+ALL_CAPS: [A-F];
+
+SPACE: [\x20];
+
+MATCH: 'match';
+
+COMMENT: '#' .*? '\r'? '\n' -> skip;
+WS: [\x20\t\r\n]+ -> skip;
