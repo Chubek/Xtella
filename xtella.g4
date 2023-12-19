@@ -32,7 +32,7 @@ tupleLiteral
     ;
 
 regexLiteral
-    : '/' ~SPACE '/'
+    : '/' REGEX '/'
     ;
 
 character
@@ -48,8 +48,13 @@ character
 
 
 string
-    : '"' .* '"'
-    | '\'' .* '\''
+    : '"' ( (~'"') .*) | ESC_SEQ '"'
+    | '\''( (~'\'') .*) | ESC_SEQ '\''
+    ;
+
+multilineString
+    : '"""' (~ '"""') (ESC_SEQ | ALL) '"""'
+    | '```' (~ '```') (ESC_SEQ | ALL) '```'
     ;
 
 shellCommand
@@ -272,7 +277,12 @@ startRule
 
 INT: [0-9];
 
-CHAR: [a-zA-Z0-9_];
+
+ALL: . | [\n\r];
+
+ESC_SEQ: \\([abfnrtv'"\?\\]|([0-7]{1,3})|(x[0-9a-fA-F]+)|(u[0-9a-fA-F]{4}));
+
+CHAR: [a-zA-Z0-9_!@#$%^&*()\[\]{}"':?<>,~`];
 IDENT: [a-zA-Z_][a-zA-Z0-9_]*;
 
 HEX_DIGIT: [0-9a-fA-F];
