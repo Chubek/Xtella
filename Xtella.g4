@@ -5,10 +5,10 @@ identifier
     ;
 
 typeName
-    : 'string'
-    | 'int'
-    | 'float'
-    | 'symbol'
+    : TYPE_STRING
+    | TYPE_INT
+    | TYPE_FLOAT
+    | TYPE_SYMBOL
     | identifier
     ;
 
@@ -198,6 +198,10 @@ arguments
     : identifier (',' identifier )*
     ;
 
+symbolLiteral
+    : '\'' identifier
+    ;
+
 integerLiteral
     : INT+
     | ('0x' | '0X') HEX_DIGIT+
@@ -243,6 +247,7 @@ primaryExpression
     | printExpression
     | typeName
     | access
+    | symbolLiteral
     | hashLiteral
     | listLiteral
     | regexLiteral
@@ -406,6 +411,11 @@ SIGIL_CHAN: '>';
 STDIN: '<STDIN>';
 STDOUT: '<STDOUT>';
 STDERR: '<STDERR>';
+
+TYPE_STRING: 'string';
+TYPE_INT: 'int';
+TYPE_FLOAT: 'float';
+TYPE_SYMBOL: 'symbol';
 
 ALL_CAPS: [A-Z];
 
