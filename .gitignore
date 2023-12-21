@@ -1,3 +1,10 @@
-Xtella*.java
-Xtella*.tokens
-Xtella*.interp
+XtellaBaseListener.java
+Xtella.interp
+XtellaLexer.tokens
+Xtella.tokens
+XtellaBaseVisitor.java
+XtellaLexer.interp
+XtellaListener.java  
+XtellaVisitor.java
+XtellaLexer.java
+XtellaParser.java
