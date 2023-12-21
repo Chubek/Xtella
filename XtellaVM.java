@@ -500,11 +500,27 @@ public class XtellaVM {
       arguments[i] = stack.pop();
     }
 
-    // Execute the function (this is a placeholder, you need to define how your functions are
-    // executed)
-    Object result = function.execute(arguments);
+newFrame();
 
-    // Push the result of the function call onto the stack
+    // Push the function arguments into the new frame
+    for (Object argument : arguments) {
+        stack.push(argument);
+        frame_pointer++;
+    }
+
+    function.execute(arguments, stack, frame_pointer);
+
+    // Pop the function arguments from the stack after the function call
+    for (int i = 0; i < function.getArity(); i++) {
+        stack.pop();
+        frame_pointer--;
+    }
+
+    // Pop the frame after the function call
+    scopes.remove(scope_number - 1);
+    scope_number--;
+    frame_pointer = 0;
+
     stack.push(result);
 
     frame_pointer++;
