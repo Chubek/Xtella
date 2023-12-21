@@ -1,3 +1,5 @@
+*.tmp
+*.temp
 XtellaBaseListener.java
 Xtella.interp
 XtellaLexer.tokens
