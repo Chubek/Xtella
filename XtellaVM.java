@@ -36,51 +36,53 @@ public class XtellaVM {
   public static final int LOAD_VARIABLE = 28;
   public static final int STORE_VARIABLE = 29;
 
-  private Stack<Object> stack; // VM stack
-  private List<Map<String, Object>> scopes; // VM lexical scopes
-  private int instruction_pointer;
-  private int frame_pointer;
-  private int scope_number;
+  private Stack<Object> stack;
+  private Stack<Object> argumentStack;
+  private Map<String, Object> globalScope;
+  private List<Map<String, Object>> scopes;
+  private int instructionPointer;
+  private int framePointer;
+  private int scopeNumber;
 
   public XtellaVM() {
     stack = new Stack<>();
     scopes = new ArrayList<>();
-    instruction_pointer = 0;
-    frame_pointer = 0;
+    instructionPointer = 0;
+    framePointer = 0;
   }
 
   public void newFrame() {
-    frame_pointer = 0;
-    scope_number++;
+    framePointer = 0;
+    scopeNumber++;
     Map<String, Object> newScope = new HashMap<>();
     scopes.add(newScope);
   }
 
   public Object getInScope(String identifier) {
-    return scopes.get(scope_number - 1).get(identifier);
+    return scopes.get(scopeNumber - 1).get(identifier);
   }
 
   public void putInScope(String identifier, Object object) {
-    scopes.get(scope_number - 1).put(identifier, object);
+    scopes.get(scopeNumber - 1).put(identifier, object);
   }
 
   private void executePushInt() {
-    int value = (int) stack.get(instruction_pointer);
+    int value = (int) stack.get(instructionPointer);
     stack.push(value);
   }
 
   private void executePushString() {
-    String value = (String) stack.get(instruction_pointer);
+    String value = (String) stack.get(instructionPointer);
     stack.push(value);
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executePushFloat() {
-    float value = (float) stack.get(instruction_pointer);
+    float value = (float) stack.get(instructionPointer);
     stack.push(value);
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeAdd() {
@@ -101,7 +103,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for ADD");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeSubtract() {
@@ -122,7 +124,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for SUBTRACT");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeMultiply() {
@@ -143,7 +145,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for MULTIPLY");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeDivide() {
@@ -164,7 +166,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for DIVIDE");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeModulo() {
@@ -182,7 +184,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for MODULO");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeBitwiseAnd() {
@@ -200,7 +202,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for BITWISE_AND");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeBitwiseOr() {
@@ -218,7 +220,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for BITWISE_OR");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeBitwiseXor() {
@@ -236,7 +238,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for BITWISE_XOR");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeShiftLeft() {
@@ -254,7 +256,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for SHIFT_LEFT");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeShiftRight() {
@@ -272,7 +274,7 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for SHIFT_RIGHT");
     }
 
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeEqual() {
@@ -296,7 +298,7 @@ public class XtellaVM {
     }
 
     stack.push(result);
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeNotEqual() {
@@ -320,7 +322,7 @@ public class XtellaVM {
     }
 
     stack.push(result);
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeLessThan() {
@@ -342,7 +344,7 @@ public class XtellaVM {
     }
 
     stack.push(result);
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeLessThanOrEqual() {
@@ -364,7 +366,7 @@ public class XtellaVM {
     }
 
     stack.push(result);
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeGreaterThan() {
@@ -386,7 +388,7 @@ public class XtellaVM {
     }
 
     stack.push(result);
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeGreaterThanOrEqual() {
@@ -408,37 +410,37 @@ public class XtellaVM {
     }
 
     stack.push(result);
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeReturn() {
-    if (frame_pointer == 0) {
+    if (framePointer == 0) {
       throw new IllegalStateException("Cannot RETURN from the main frame");
     }
 
-    frame_pointer--;
-    instruction_pointer = 0;
+    framePointer--;
+    instructionPointer = 0;
   }
 
   private void executeJump() {
     // Get the target instruction index from the stack
-    int targetIndex = (int) stack.get(instruction_pointer);
+    int targetIndex = (int) stack.get(instructionPointer);
     // Set the instruction pointer to the target index
-    instruction_pointer = targetIndex;
+    instructionPointer = targetIndex;
   }
 
   private void executeJumpIfTrue() {
     // Pop the condition from the stack
     boolean condition = (boolean) stack.pop();
     // Get the target instruction index from the stack
-    int targetIndex = (int) stack.get(instruction_pointer);
+    int targetIndex = (int) stack.get(instructionPointer);
 
     if (condition) {
       // If the condition is true, set the instruction pointer to the target index
-      instruction_pointer = targetIndex;
+      instructionPointer = targetIndex;
     } else {
       // Otherwise, move to the next instruction
-      instruction_pointer++;
+      instructionPointer++;
     }
   }
 
@@ -446,14 +448,14 @@ public class XtellaVM {
     // Pop the condition from the stack
     boolean condition = (boolean) stack.pop();
     // Get the target instruction index from the stack
-    int targetIndex = (int) stack.get(instruction_pointer);
+    int targetIndex = (int) stack.get(instructionPointer);
 
     if (!condition) {
       // If the condition is false, set the instruction pointer to the target index
-      instruction_pointer = targetIndex;
+      instructionPointer = targetIndex;
     } else {
       // Otherwise, move to the next instruction
-      instruction_pointer++;
+      instructionPointer++;
     }
   }
 
@@ -470,7 +472,7 @@ public class XtellaVM {
     }
 
     stack.push(variableValue);
-    frame_pointer++;
+    framePointer++;
   }
 
   private void executeStoreVariable() {
@@ -482,71 +484,47 @@ public class XtellaVM {
     Object variableValue = stack.pop();
 
     putInScope((String) variableName, variableValue);
-    frame_pointer++;
+    framePointer++;
+  }
+
+  private void executeLoadFunction() {
+     if (stack.size() < 1) {
+        throw new IllegalStateException("Not enough operands on the stack for LOAD_FUNCTION");
+     }
+
+     String functionName = (String) stack.pop();
+     int functionArity = (int) stack.pop();
+
+     globalScope.put(functionName, instructionPointer);
+     globalScope.put(functionName + "_arity", functionArity);
+
+     instructionPointer++;
+     framePointer++;
+     
   }
 
   private void executeCallFunction() {
-    if (stack.size() < 1 || !(stack.peek() instanceof Function)) {
+    if (stack.size() < 1) {
       throw new IllegalStateException("Invalid state for CALL_FUNCTION");
     }
+    
+    String functionName = (String) stack.pop();
+    int argumentNum = (int) stack.pop();
 
-    XtellaFunction function = (XtellaFunction) stack.pop();
-    Object[] arguments = new Object[function.getArity()];
-
-    for (int i = function.getArity() - 1; i >= 0; i--) {
-      if (stack.isEmpty()) {
-        throw new IllegalStateException("Not enough arguments on the stack for CALL_FUNCTION");
-      }
-      arguments[i] = stack.pop();
+    instructionPointer = globalScope.get(functionName);
+    int functionArity = globalScope.get(functionName + "_arity");
+ 
+    if (argumentNum < functionArity) {
+       throw new IllegalStateException("Not enough arguments passed to function");
     }
 
-    newFrame();
+   argumentStack.clear();
 
-    // Push the function arguments into the new frame
-    for (Object argument : arguments) {
-      stack.push(argument);
-      frame_pointer++;
+    for (int i = 0; i <= argumentNum; i++) {
+  	argumentStack.push(stack.pop());
     }
-
-    function.execute(arguments, stack, frame_pointer);
-
-    // Pop the function arguments from the stack after the function call
-    for (int i = 0; i < function.getArity(); i++) {
-      stack.pop();
-      frame_pointer--;
-    }
-
-    // Pop the frame after the function call
-    scopes.remove(scope_number - 1);
-    scope_number--;
-    frame_pointer = 0;
-
-    stack.push(result);
-
-    frame_pointer++;
+ 
+    executeVM();
   }
 
-  public void executeNextInstruction() {
-    int instruction = (int) stack.get(instruction_pointer);
-    instruction_pointer++;
-
-    switch (instruction) {
-      case PUSH_INT:
-        executePushInt();
-        break;
-      case PUSH_STRING:
-        executePushString();
-        break;
-      case PUSH_FLOAT:
-        executePushFloat();
-        break;
-      case ADD:
-        executeAdd();
-        break;
-      default:
-        throw new UnsupportedOperationException("Unknown instruction: " + instruction);
-    }
-  }
-
-  public static void main(String[] args) {}
 }
