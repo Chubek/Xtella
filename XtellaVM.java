@@ -500,20 +500,20 @@ public class XtellaVM {
       arguments[i] = stack.pop();
     }
 
-newFrame();
+    newFrame();
 
     // Push the function arguments into the new frame
     for (Object argument : arguments) {
-        stack.push(argument);
-        frame_pointer++;
+      stack.push(argument);
+      frame_pointer++;
     }
 
     function.execute(arguments, stack, frame_pointer);
 
     // Pop the function arguments from the stack after the function call
     for (int i = 0; i < function.getArity(); i++) {
-        stack.pop();
-        frame_pointer--;
+      stack.pop();
+      frame_pointer--;
     }
 
     // Pop the frame after the function call
