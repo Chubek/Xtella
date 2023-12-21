@@ -5,57 +5,198 @@ import java.util.Map;
 import java.util.Stack;
 
 public class XtellaVM {
-    public static final int PUSH_INT = ;
-    public static final int PUSH_STRING = ;
-    public static final int PUSH_FLOAT = ;
-    public static final int ADD = ;
-    public static final int SUBTRACT = ;
-    public static final int MULTIPLY = ;
-    public static final int DIVIDE = ;
-    public static final int MODULO = ;
-    public static final int BITWISE_AND = ;
-    public static final int BITWISE_OR = ;
-    public static final int BITWISE_XOR = ;
-    public static final int SHIFT_LEFT = ;
-    public static final int SHIFT_RIGHT = ;
-    public static final int LOGICAL_AND = ;
-    public static final int LOGICAL_OR = ;
-    public static final int LOGICAL_NOT = ;
-    public static final int EQUAL = ;
-    public static final int NOT_EQUAL = ;
-    public static final int LESS_THAN = ;
-    public static final int LESS_THAN_OR_EQUAL = ;
-    public static final int GREATER_THAN = ;
-    public static final int GREATER_THAN_OR_EQUAL = ;
-    public static final int JUMP = ;
-    public static final int JUMP_IF_TRUE = ;
-    public static final int JUMP_IF_FALSE = ;
-    public static final int CALL_FUNCTION = ;
-    public static final int RETURN = ;
-    public static final int LOAD_VARIABLE = ;
-    public static final int STORE_VARIABLE = ;
-   
-    private Stack<Object> stack;		// vm stack
-    private List<Map<String, Object>> scopes;   // vm lexical scopes
+    // Constants for operations
+    public static final int PUSH_INT = 1;
+    public static final int PUSH_STRING = 2;
+    public static final int PUSH_FLOAT = 3;
+    public static final int ADD = 4;
+    public static final int SUBTRACT = 5;
+    public static final int MULTIPLY = 6;
+    public static final int DIVIDE = 7;
+    public static final int MODULO = 8;
+    public static final int BITWISE_AND = 9;
+    public static final int BITWISE_OR = 10;
+    public static final int BITWISE_XOR = 11;
+    public static final int SHIFT_LEFT = 12;
+    public static final int SHIFT_RIGHT = 13;
+    public static final int LOGICAL_AND = 14;
+    public static final int LOGICAL_OR = 15;
+    public static final int LOGICAL_NOT = 16;
+    public static final int EQUAL = 17;
+    public static final int NOT_EQUAL = 18;
+    public static final int LESS_THAN = 19;
+    public static final int LESS_THAN_OR_EQUAL = 20;
+    public static final int GREATER_THAN = 21;
+    public static final int GREATER_THAN_OR_EQUAL = 22;
+    public static final int JUMP = 23;
+    public static final int JUMP_IF_TRUE = 24;
+    public static final int JUMP_IF_FALSE = 25;
+    public static final int CALL_FUNCTION = 26;
+    public static final int RETURN = 27;
+    public static final int LOAD_VARIABLE = 28;
+    public static final int STORE_VARIABLE = 29;
 
-    private instruction_pointer;
-    private frame_pointer;
+    private Stack<Object> stack;                // VM stack
+    private List<Map<String, Object>> scopes;   // VM lexical scopes
+    private int instruction_pointer;
+    private int frame_pointer;
+    private int scope_number;
 
     public XtellaVM() {
         stack = new Stack<>();
-        variables = new ArrayList<>();
-    }
-   
-    public static void push(Object instruction) { 
-	this.stack.push(instruction);
-	this.instruction_pointer++;
+        scopes = new ArrayList<>();
+        instruction_pointer = 0;
+        frame_pointer = 0;
     }
 
-    public static Object pop() {
-	this.instruction_pointer--;
-	return this.stack.pop();
+    public void newFrame() {
+        frame_pointer = 0;
+	scope++;
+        Map<String, Object> newScope = new HashMap<>();
+        scopes.add(newScope);
     }
 
-    
+    public Object getInScope(String identifier) {
+        return scopes.get(scope_number - 1).get(identifier);
+    }
+
+    public void putInScope(String identifier, Object object) {
+        scopes.get(scope_number - 1).put(identifier, object);
+    }
+
+    private void executePushInt() {
+        int value = (int) stack.get(instruction_pointer);
+        stack.push(value);
+    }
+
+    private void executePushString() {
+        String value = (String) stack.get(instruction_pointer);
+        stack.push(value);
+
+	frame_pointer++;
+    }
+
+    private void executePushFloat() {
+        float value = (float) stack.get(instruction_pointer);
+        stack.push(value);
+
+	frame_pointer++;
+    }
+
+    private void executeAdd() {
+        if (stack.size() < 2) {
+            throw new IllegalStateException("Not enough operands on the stack for ADD");
+        }
+
+        Object operand1 = stack.pop();
+        Object operand2 = stack.pop();
+
+        if (operand1 instanceof Integer && operand2 instanceof Integer) {
+            int result = (int) operand1 + (int) operand2;
+            stack.push(result);
+        } else if (operand1 instanceof Float && operand2 instanceof Float) {
+            float result = (float) operand1 + (float) operand2;
+            stack.push(result);
+        } else {
+            throw new IllegalArgumentException("Invalid operand types for ADD");
+        }
+
+	frame_pointer++;
+    }
+
+
+    private void executeSubtract() {
+        if (stack.size() < 2) {
+            throw new IllegalStateException("Not enough operands on the stack for SUBTRACT");
+        }
+
+        Object operand1 = stack.pop();
+        Object operand2 = stack.pop();
+
+        if (operand1 instanceof Integer && operand2 instanceof Integer) {
+            int result = (int) operand2 - (int) operand1;
+            stack.push(result);
+        } else if (operand1 instanceof Float && operand2 instanceof Float) {
+            float result = (float) operand2 - (float) operand1;
+            stack.push(result);
+        } else {
+            throw new IllegalArgumentException("Invalid operand types for SUBTRACT");
+        }
+
+	frame_pointer++;
+    }
+
+    private void executeMultiply() {
+        if (stack.size() < 2) {
+            throw new IllegalStateException("Not enough operands on the stack for MULTIPLY");
+        }
+
+        Object operand1 = stack.pop();
+        Object operand2 = stack.pop();
+
+        if (operand1 instanceof Integer && operand2 instanceof Integer) {
+            int result = (int) operand1 * (int) operand2;
+            stack.push(result);
+        } else if (operand1 instanceof Float && operand2 instanceof Float) {
+            float result = (float) operand1 * (float) operand2;
+            stack.push(result);
+        } else {
+            throw new IllegalArgumentException("Invalid operand types for MULTIPLY");
+        }
+
+	frame_pointer++;
+    }
+
+    private void executeDivide() {
+        if (stack.size() < 2) {
+            throw new IllegalStateException("Not enough operands on the stack for DIVIDE");
+        }
+
+        Object operand1 = stack.pop();
+        Object operand2 = stack.pop();
+
+        if (operand1 instanceof Integer && operand2 instanceof Integer) {
+            int result = (int) operand2 / (int) operand1;
+            stack.push(result);
+        } else if (operand1 instanceof Float && operand2 instanceof Float) {
+            float result = (float) operand2 / (float) operand1;
+            stack.push(result);
+        } else {
+            throw new IllegalArgumentException("Invalid operand types for DIVIDE");
+        }
+
+	frame_pointer++;
+    }
+
+    private void executeReturn() {
+ 	if (frame_pointer == 0) {
+        	throw new IllegalStateException("Cannot RETURN from the main frame");
+    	}
+
+    	frame_pointer--;
+    	instruction_pointer = 0;
+    }
+
+    public void executeNextInstruction() {
+        int instruction = (int) stack.get(instruction_pointer);
+        instruction_pointer++;
+
+        switch (instruction) {
+            case PUSH_INT:
+                executePushInt();
+                break;
+            case PUSH_STRING:
+                executePushString();
+                break;
+            case PUSH_FLOAT:
+                executePushFloat();
+                break;
+            case ADD:
+                executeAdd();
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown instruction: " + instruction);
+        }
+    }
 }
 
