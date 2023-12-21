@@ -32,12 +32,14 @@ public class XtellaVM {
   public static final int JUMP_IF_TRUE = 24;
   public static final int JUMP_IF_FALSE = 25;
   public static final int CALL_FUNCTION = 26;
-  public static final int RETURN = 27;
-  public static final int LOAD_VARIABLE = 28;
-  public static final int STORE_VARIABLE = 29;
+  public static final int LOAD_FUNCTION = 27;
+  public static final int RETURN = 28;
+  public static final int LOAD_VARIABLE = 29;
+  public static final int STORE_VARIABLE = 30;
+  public static final int LOAD_ARG = 31;
 
   private Stack<Object> stack;
-  private Stack<Object> argumentStack;
+  private List<Object> argumentList;
   private Map<String, Object> globalScope;
   private List<Map<String, Object>> scopes;
   private int instructionPointer;
@@ -51,18 +53,23 @@ public class XtellaVM {
     framePointer = 0;
   }
 
-  public void newFrame() {
+  private static int newFrame() {
     framePointer = 0;
-    scopeNumber++;
     Map<String, Object> newScope = new HashMap<>();
     scopes.add(newScope);
+    return scopeNumber++;
   }
 
-  public Object getInScope(String identifier) {
+  private static void dropFrame(int rmIdx) {
+    scopes.remove(rmIdx);
+    scopesNumber--;
+  }
+
+  private static Object getInScope(String identifier) {
     return scopes.get(scopeNumber - 1).get(identifier);
   }
 
-  public void putInScope(String identifier, Object object) {
+  private static void putInScope(String identifier, Object object) {
     scopes.get(scopeNumber - 1).put(identifier, object);
   }
 
@@ -511,20 +518,35 @@ public class XtellaVM {
     String functionName = (String) stack.pop();
     int argumentNum = (int) stack.pop();
 
-    instructionPointer = globalScope.get(functionName);
+    int functionAddress = globalScope.get(functionName);
     int functionArity = globalScope.get(functionName + "_arity");
  
     if (argumentNum < functionArity) {
        throw new IllegalStateException("Not enough arguments passed to function");
     }
 
-   argumentStack.clear();
+   argumentList.clear();
 
     for (int i = 0; i <= argumentNum; i++) {
-  	argumentStack.push(stack.pop());
+  	argumentList.add(stack.pop());
     }
  
-    executeVM();
+    int scopeId = newFrame();
+    executeVM(functionAddress);
+    dropFrame(scopeId);
   }
+
+  private void executeLoadArg() {
+    if (stack.size() < 1) {
+	throw new IllegalStateException("Not enough operands on stack for LOAD_ARG");
+    }
+
+    int argIndex = (int) stack.pop();
+    stack.push(argumentList.get(argIndex));
+
+    framePointer++;
+  }
+
+  public static void executeVM(int stackPointer) { }
 
 }
