@@ -457,6 +457,59 @@ public class XtellaVM {
     }
   }
 
+  private void executeLoadVariable() {
+    if (stack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for LOAD_VARIABLE");
+    }
+
+    Object variableName = stack.pop();
+    Object variableValue = getInScope((String) variableName);
+
+    if (variableValue == null) {
+      throw new IllegalArgumentException("Variable not found: " + variableName);
+    }
+
+    stack.push(variableValue);
+    frame_pointer++;
+  }
+
+  private void executeStoreVariable() {
+    if (stack.size() < 2) {
+      throw new IllegalStateException("Not enough operands on the stack for STORE_VARIABLE");
+    }
+
+    Object variableName = stack.pop();
+    Object variableValue = stack.pop();
+
+    putInScope((String) variableName, variableValue);
+    frame_pointer++;
+  }
+
+  private void executeCallFunction() {
+    if (stack.size() < 1 || !(stack.peek() instanceof Function)) {
+      throw new IllegalStateException("Invalid state for CALL_FUNCTION");
+    }
+
+    XtellaFunction function = (XtellaFunction) stack.pop();
+    Object[] arguments = new Object[function.getArity()];
+
+    for (int i = function.getArity() - 1; i >= 0; i--) {
+      if (stack.isEmpty()) {
+        throw new IllegalStateException("Not enough arguments on the stack for CALL_FUNCTION");
+      }
+      arguments[i] = stack.pop();
+    }
+
+    // Execute the function (this is a placeholder, you need to define how your functions are
+    // executed)
+    Object result = function.execute(arguments);
+
+    // Push the result of the function call onto the stack
+    stack.push(result);
+
+    frame_pointer++;
+  }
+
   public void executeNextInstruction() {
     int instruction = (int) stack.get(instruction_pointer);
     instruction_pointer++;
