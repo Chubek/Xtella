@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Stack;
 
 public class XtellaVM {
-  // Constants for operations
+
   public static final int PUSH_INT = 1;
   public static final int PUSH_STRING = 2;
   public static final int PUSH_FLOAT = 3;
@@ -62,8 +62,8 @@ public class XtellaVM {
     return scopeNumber++;
   }
 
-  private static void dropFrame(int rmIdx) {
-    scopes.remove(rmIdx);
+  private static void dropFrame(int rmIndex) {
+    scopes.remove(rmIndex);
     stackPointer += framePointer;
     scopesNumber--;
   }
@@ -433,38 +433,38 @@ public class XtellaVM {
   }
 
   private void executeJump() {
-    // Get the target instruction index from the stack
+
     int targetIndex = (int) operandStack.get(instructionPointer);
-    // Set the instruction pointer to the target index
+
     instructionPointer = targetIndex;
   }
 
   private void executeJumpIfTrue() {
-    // Pop the condition from the stack
+
     boolean condition = (boolean) operandStack.pop();
-    // Get the target instruction index from the stack
+
     int targetIndex = (int) operandStack.get(instructionPointer);
 
     if (condition) {
-      // If the condition is true, set the instruction pointer to the target index
+
       instructionPointer = targetIndex;
     } else {
-      // Otherwise, move to the next instruction
+
       instructionPointer++;
     }
   }
 
   private void executeJumpIfFalse() {
-    // Pop the condition from the stack
+
     boolean condition = (boolean) operandStack.pop();
-    // Get the target instruction index from the stack
+
     int targetIndex = (int) operandStack.get(instructionPointer);
 
     if (!condition) {
-      // If the condition is false, set the instruction pointer to the target index
+
       instructionPointer = targetIndex;
     } else {
-      // Otherwise, move to the next instruction
+
       instructionPointer++;
     }
   }
@@ -518,29 +518,29 @@ public class XtellaVM {
     }
 
     String functionName = (String) operandStack.pop();
-    int varArgNum = (int) operandStack.pop();
 
     int functionAddress = globalScope.get(functionName);
-    int functionArity = globalScope.get(functionName + "_arity");
     List<String> functionParams = globalScope.get(functionName + "_params");
 
     int scopeId = newFrame();
 
-    for (int i = 0; i <= functionArity; i++) {
+    for (int i = 0; i <= functionParams.size(); i++) {
       String argumentId = functionParams[i];
       Object argument = operandStack.pop();
 
-      instructionStack.push(STORE_VARIABLE);
       operandStack.push(argument);
       operandStack.push(argumentId);
 
       executeStoreVariable();
     }
 
-    varArgs.clear();
+    int varArgNum = (int) operandStack.pop();
 
-    while (--varArgNum) {
-      varArgs.add(operandstack.pop());
+    if (varArgNum > 0) {
+      varArgs.clear();
+      while (--varArgNum) {
+        varArgs.add(operandstack.pop());
+      }
     }
 
     executeVM(functionAddress);
@@ -552,13 +552,13 @@ public class XtellaVM {
       throw new IllegalStateException("Not enough operands for GET_VARARG");
     }
 
-    int varArgIdx = (int) operandStack.pop();
+    int varArgIndex = (int) operandStack.pop();
 
-    if (varArgIdx >= varArgs.size()) {
+    if (varArgIndex >= varArgs.size()) {
       throw new IllegalStateException("Number of requested variable argument is illegal");
     }
 
-    operandStack.push(varArg.get(varArgIdx));
+    operandStack.push(varArg.get(varArgIndex));
 
     framePointer++;
   }
