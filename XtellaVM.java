@@ -37,6 +37,8 @@ public class XtellaVM {
   public static final int LOAD_VARIABLE = 29;
   public static final int STORE_VARIABLE = 30;
   public static final int GET_VARARG = 31;
+  public static final int REGEX_MATCH = 32;
+  public static final int EXEC_COMMAND = 33;
 
   private Stack<int> instructionStack;
   private Stack<Object> operandStack;
@@ -47,6 +49,7 @@ public class XtellaVM {
   private int stackPointer;
   private int framePointer;
   private int scopeNumber;
+  private int lastExitCode;
 
   public XtellaVM() {
     stack = new Stack<>();
@@ -559,6 +562,51 @@ public class XtellaVM {
     }
 
     operandStack.push(varArg.get(varArgIndex));
+
+    framePointer++;
+  }
+
+  private void executeRegexMatch() {
+    if (operandStack.size() < 2) {
+      throw new IllegalStateException("Not enough operands on the stack for REGEX_MATCH");
+    }
+
+    Object operand1 = operandStack.pop();
+    Object operand2 = operandStack.pop();
+
+    if (operand1 instanceof String && operand2 instanceof String) {
+      String input = (String) operand1;
+      String pattern = (String) operand2;
+
+      boolean result = input.matches(pattern);
+      operandStack.push(result);
+    } else {
+      throw new IllegalArgumentException("Invalid operand types for REGEX_MATCH");
+    }
+
+    framePointer++;
+  }
+
+  private void executeExecCommand() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for EXEC_COMMAND");
+    }
+
+    Object command = operandStack.pop();
+
+    if (command instanceof String) {
+      String commandString = (String) command;
+
+      try {
+        Process process = Runtime.getRuntime().exec(commandString);
+        lastExitCode = process.waitFor();
+        operandStack.push(lastExitCode);
+      } catch (IOException | InterruptedException e) {
+        throw new RuntimeException("Error executing command: " + commandString, e);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for EXEC_COMMAND");
+    }
 
     framePointer++;
   }
