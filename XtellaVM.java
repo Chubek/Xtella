@@ -9,52 +9,60 @@ public class XtellaVM {
   public static final int PUSH_INT = 1;
   public static final int PUSH_STRING = 2;
   public static final int PUSH_FLOAT = 3;
-  public static final int ADD = 4;
-  public static final int SUBTRACT = 5;
-  public static final int MULTIPLY = 6;
-  public static final int DIVIDE = 7;
-  public static final int MODULO = 8;
-  public static final int BITWISE_AND = 9;
-  public static final int BITWISE_OR = 10;
-  public static final int BITWISE_XOR = 11;
-  public static final int SHIFT_LEFT = 12;
-  public static final int SHIFT_RIGHT = 13;
-  public static final int LOGICAL_AND = 14;
-  public static final int LOGICAL_OR = 15;
-  public static final int LOGICAL_NOT = 16;
-  public static final int EQUAL = 17;
-  public static final int NOT_EQUAL = 18;
-  public static final int LESS_THAN = 19;
-  public static final int LESS_THAN_OR_EQUAL = 20;
-  public static final int GREATER_THAN = 21;
-  public static final int GREATER_THAN_OR_EQUAL = 22;
-  public static final int JUMP = 23;
-  public static final int JUMP_IF_TRUE = 24;
-  public static final int JUMP_IF_FALSE = 25;
-  public static final int CALL_FUNCTION = 26;
-  public static final int LOAD_FUNCTION = 27;
-  public static final int RETURN = 28;
-  public static final int LOAD_VARIABLE = 29;
-  public static final int STORE_VARIABLE = 30;
-  public static final int GET_VARARG = 31;
-  public static final int REGEX_MATCH = 32;
-  public static final int EXEC_COMMAND = 33;
+  public static final int PUSH_ARRAY = 4;
+  public static final int PUSH_HASHMAP = 5;
+  public static final int ADD = 6;
+  public static final int SUBTRACT = 7;
+  public static final int MULTIPLY = 8;
+  public static final int DIVIDE = 9;
+  public static final int MODULO = 10;
+  public static final int BITWISE_AND = 11;
+  public static final int BITWISE_OR = 12;
+  public static final int BITWISE_XOR = 13;
+  public static final int SHIFT_LEFT = 14;
+  public static final int SHIFT_RIGHT = 15;
+  public static final int LOGICAL_AND = 16;
+  public static final int LOGICAL_OR = 17;
+  public static final int LOGICAL_NOT = 18;
+  public static final int EQUAL = 19;
+  public static final int NOT_EQUAL = 20;
+  public static final int LESS_THAN = 21;
+  public static final int LESS_THAN_OR_EQUAL = 22;
+  public static final int GREATER_THAN = 23;
+  public static final int GREATER_THAN_OR_EQUAL = 24;
+  public static final int JUMP = 25;
+  public static final int JUMP_IF_TRUE = 26;
+  public static final int JUMP_IF_FALSE = 27;
+  public static final int CALL_FUNCTION = 28;
+  public static final int LOAD_FUNCTION = 29;
+  public static final int RETURN = 30;
+  public static final int LOAD_VARIABLE = 31;
+  public static final int STORE_VARIABLE = 32;
+  public static final int LOAD_VARIABLE_FROM_ARRAY = 33;
+  public static final int STORE_VARIABLE_INTO_ARRAY = 34;
+  public static final int LOAD_VARIABLE_FROM_HASHMAP = 35;
+  public static final int STORE_VARIABLE_INTO_HASHMAP = 36;
+  public static final int GET_VARARG = 37;
+  public static final int REGEX_MATCH = 38;
+  public static final int EXEC_COMMAND = 39;
 
   private Stack<int> instructionStack;
   private Stack<Object> operandStack;
   private List<Object> varArgs;
   private Map<String, Object> globalScope;
   private List<Map<String, Object>> scopes;
-  private int instructionPointer;
+  private int programCounter;
   private int stackPointer;
   private int framePointer;
   private int scopeNumber;
   private int lastExitCode;
 
   public XtellaVM() {
-    stack = new Stack<>();
+    instructionStack = new Stack<>();
+    operandStack = new Stack<>();
     scopes = new ArrayList<>();
-    instructionPointer = 0;
+    programCounter = 0;
+    stackPointer = 0;
     framePointer = 0;
   }
 
@@ -80,20 +88,81 @@ public class XtellaVM {
   }
 
   private void executePushInt() {
-    int value = (int) operandStack.get(instructionPointer);
-    operandStack.push(value);
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for PUSH_INT");
+    }
+
+    Object intValue = operandStack.pop();
+
+    if (intValue instanceof Integer) {
+      operandStack.push(intValue);
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for PUSH_INT");
+    }
+
+    framePointer++;
   }
 
   private void executePushString() {
-    String value = (String) operandStack.get(instructionPointer);
-    operandStack.push(value);
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for PUSH_STRING");
+    }
+
+    Object stringValue = operandStack.pop();
+
+    if (stringValue instanceof String) {
+      operandStack.push(stringValue);
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for PUSH_STRING");
+    }
 
     framePointer++;
   }
 
   private void executePushFloat() {
-    float value = (float) operandStack.get(instructionPointer);
-    operandStack.push(value);
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for PUSH_FLOAT");
+    }
+
+    Object floatValue = operandStack.pop();
+
+    if (floatValue instanceof Float) {
+      operandStack.push(floatValue);
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for PUSH_FLOAT");
+    }
+
+    framePointer++;
+  }
+
+  private void executePushArray() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for PUSH_ARRAY");
+    }
+
+    Object arrayObject = operandStack.pop();
+
+    if (arrayObject instanceof List<?>) {
+      operandStack.add(array);
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for PUSH_ARRAY");
+    }
+
+    framePointer += array.size();
+  }
+
+  private void executePushHashMap() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for PUSH_HASHMAP");
+    }
+
+    Object hashMapValue = operandStack.pop();
+
+    if (hashMapValue instanceof HashMap<?, ?>) {
+      operandStack.push(hashMapValue);
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for PUSH_HASHMAP");
+    }
 
     framePointer++;
   }
@@ -432,28 +501,28 @@ public class XtellaVM {
     }
 
     framePointer--;
-    instructionPointer = 0;
+    programCounter = 0;
   }
 
   private void executeJump() {
 
-    int targetIndex = (int) operandStack.get(instructionPointer);
+    int targetIndex = (int) operandStack.get(programCounter);
 
-    instructionPointer = targetIndex;
+    programCounter = targetIndex;
   }
 
   private void executeJumpIfTrue() {
 
     boolean condition = (boolean) operandStack.pop();
 
-    int targetIndex = (int) operandStack.get(instructionPointer);
+    int targetIndex = (int) operandStack.get(programCounter);
 
     if (condition) {
 
-      instructionPointer = targetIndex;
+      programCounter = targetIndex;
     } else {
 
-      instructionPointer++;
+      programCounter++;
     }
   }
 
@@ -461,14 +530,14 @@ public class XtellaVM {
 
     boolean condition = (boolean) operandStack.pop();
 
-    int targetIndex = (int) operandStack.get(instructionPointer);
+    int targetIndex = (int) operandStack.get(programCounter);
 
     if (!condition) {
 
-      instructionPointer = targetIndex;
+      programCounter = targetIndex;
     } else {
 
-      instructionPointer++;
+      programCounter++;
     }
   }
 
@@ -500,19 +569,102 @@ public class XtellaVM {
     framePointer++;
   }
 
+  private void executeLoadVariableFromArray() {
+    if (operandStack.size() < 2) {
+      throw new IllegalStateException(
+          "Not enough operands on the stack for LOAD_VARIABLE_FROM_ARRAY");
+    }
+
+    int index = (int) operandStack.pop();
+    Object arrayName = operandStack.pop();
+
+    Object array = getInScope((String) arrayName);
+
+    if (array instanceof Object[] && index >= 0 && index < ((Object[]) array).size()) {
+      Object value = ((Object[]) array)[index];
+      operandStack.push(value);
+    } else {
+      throw new IllegalArgumentException("Invalid array or index for LOAD_VARIABLE_FROM_ARRAY");
+    }
+
+    framePointer++;
+  }
+
+  private void executeLoadVariableFromHashMap() {
+    if (operandStack.size() < 2) {
+      throw new IllegalStateException(
+          "Not enough operands on the stack for LOAD_VARIABLE_FROM_HASHMAP");
+    }
+
+    Object key = operandStack.pop();
+    Object mapName = operandStack.pop();
+
+    Object map = getInScope((String) mapName);
+
+    if (map instanceof HashMap && ((HashMap<?, ?>) map).containsKey(key)) {
+      Object value = ((HashMap<?, ?>) map).get(key);
+      operandStack.push(value);
+    } else {
+      throw new IllegalArgumentException("Invalid HashMap or key for LOAD_VARIABLE_FROM_HASHMAP");
+    }
+
+    framePointer++;
+  }
+
+  private void executeStoreVariableIntoHashMap() {
+    if (operandStack.size() < 3) {
+      throw new IllegalStateException(
+          "Not enough operands on the stack for STORE_VARIABLE_INTO_HASHMAP");
+    }
+
+    Object value = operandStack.pop();
+    Object key = operandStack.pop();
+    Object mapName = operandStack.pop();
+
+    Object map = getInScope((String) mapName);
+
+    if (map instanceof HashMap) {
+      ((HashMap<Object, Object>) map).put(key, value);
+    } else {
+      throw new IllegalArgumentException("Invalid HashMap for STORE_VARIABLE_IN_HASHMAP");
+    }
+
+    framePointer++;
+  }
+
+  private void executeStoreVariableIntoArray() {
+    if (operandStack.size() < 3) {
+      throw new IllegalStateException(
+          "Not enough operands on the stack for STORE_VARIABLE_INTO_ARRAY");
+    }
+
+    Object value = operandStack.pop();
+    int index = (int) operandStack.pop();
+    Object arrayName = operandStack.pop();
+
+    Object array = getInScope((String) arrayName);
+
+    if (array instanceof Object[] && index >= 0 && index < ((Object[]) array).size()) {
+      ((Object[]) array)[index] = value;
+    } else {
+      throw new IllegalArgumentException("Invalid array or index for STORE_VARIABLE_IN_ARRAY");
+    }
+
+    framePointer++;
+  }
+
   private void executeLoadFunction() {
     if (operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for LOAD_FUNCTION");
     }
 
     String functionName = (String) operandStack.pop();
-    int functionArity = (int) operandStack.pop();
+    List<String> functionParams = (List<String>) operandStack.pop();
 
-    globalScope.put(functionName, instructionPointer);
-    globalScope.put(functionName + "_arity", functionArity);
+    globalScope.put(functionName, programCounter);
+    globalScope.put(functionName + "_params", functionParams);
 
-    instructionPointer++;
-    framePointer++;
+    programCounter++;
   }
 
   private void executeCallFunction() {
