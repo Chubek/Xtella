@@ -45,6 +45,7 @@ public class XtellaVM {
   public static final int GET_VARARG = 37;
   public static final int REGEX_MATCH = 38;
   public static final int EXEC_COMMAND = 39;
+  public static final int MAKE_VARIANT = 40;
 
   private Stack<int> instructionStack;
   private Stack<Object> operandStack;
@@ -761,6 +762,27 @@ public class XtellaVM {
     }
 
     framePointer++;
+  }
+
+  private void executeMakeVariant() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateExeception("Not enough operands on the stack for MAKE_VARIANT");
+    }
+
+    List<String> params = new List<>();
+
+    String varianetName = (String) operandStack.pop();
+    int numParams = (int) operandStack.pop();
+
+    while (numParams--) {
+	String paramName = operandStack.pop();
+	params.add(paramName);
+    }
+   
+    globalScope.put(variantName, params);
+
+    programCounter++;
+
   }
 
   public static void executeVM(int stackPointer) {}
