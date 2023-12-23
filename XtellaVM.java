@@ -60,6 +60,8 @@ public class XtellaVM {
   public static final int WRITE_FILE = 47;
   public static final int APPEND_FILE = 48;
   public static final int READ_LINE_FROM_FILE = 49;
+  public static final int SWAP_VALUE = 50;
+  public static final int DUPLICATE_VALUE = 51;
 
   private Stack<int> instructionStack;
   private Stack<Object> operandStack;
@@ -1037,6 +1039,31 @@ public class XtellaVM {
     } else {
       throw new IllegalArgumentException("Invalid operand types for APPEND_FILE");
     }
+  }
+
+  private void executeSwapValue() {
+    if (operandStack.size() < 2) {
+      throw new IllegalStateException("Not enough operands on the stack for SWAP_VALUE");
+    }
+
+    Object swapped = operandStack.pop();
+    Object swappee = operandStack.pop();
+
+    stack.push(swappee);
+    stack.push(swapped);
+
+    framePointer += 2;
+  }
+
+  private void executeDuplicateValue() {
+    if (opernadStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for DUPLICATE_VALUE");
+    }
+
+    Object duplicatedValue = operandStack.pop();
+    stack.push(duplicatedValue);
+
+    framePointer++;
   }
 
   public static void executeVM(int programCounter) {}
