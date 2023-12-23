@@ -46,6 +46,7 @@ public class XtellaVM {
   public static final int REGEX_MATCH = 38;
   public static final int EXEC_COMMAND = 39;
   public static final int MAKE_VARIANT = 40;
+  public static final int RUN_THREAD = 41;
 
   private Stack<int> instructionStack;
   private Stack<Object> operandStack;
@@ -699,7 +700,25 @@ public class XtellaVM {
       }
     }
 
-    executeVM(functionAddress);
+    boolean runThreaded = (boolean) stack.pop();
+    boolean runImmediately = (boolean) stack.pop();
+    String threadIdentifier = (String) stack.pop();
+
+    if (runThreaded) {
+      Thread t =
+          new Thread(
+              () -> {
+                executeVM(functionAddress);
+              });
+      if (runImmediately) {
+        t.start();
+      } else {
+        globalScope.put(threadIdentifier, t);
+      }
+    } else {
+      executeVM(functionAddress);
+    }
+
     dropFrame(scopeId);
   }
 
@@ -775,15 +794,27 @@ public class XtellaVM {
     int numParams = (int) operandStack.pop();
 
     while (numParams--) {
-	String paramName = operandStack.pop();
-	params.add(paramName);
+      String paramName = operandStack.pop();
+      params.add(paramName);
     }
-   
+
     globalScope.put(variantName, params);
 
     programCounter++;
-
   }
 
-  public static void executeVM(int stackPointer) {}
+  private void executeRunThread() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for RUN_THREAD");
+    }
+
+    String threadIdentifier = (String) stack.pop();
+
+    Thread t = (Thread) globalScope.get(threadIdentifier);
+
+    t.start();
+    t.join();
+  }
+
+  public static void executeVM(int programCounter) {}
 }
