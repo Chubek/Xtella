@@ -1,3 +1,8 @@
+import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +52,14 @@ public class XtellaVM {
   public static final int EXEC_COMMAND = 39;
   public static final int MAKE_VARIANT = 40;
   public static final int RUN_THREAD = 41;
+  public static final int OPEN_FILE_FOR_READING = 42;
+  public static final int OPEN_FILE_FOR_WRITING = 43;
+  public static final int OPEN_FILE_FOR_READING_AND_WRITING = 44;
+  public static final int CLOSE_FILE = 45;
+  public static final int READ_FILE = 46;
+  public static final int WRITE_FILE = 47;
+  public static final int APPEND_FILE = 48;
+  public static final int READ_LINE_FROM_FILE = 49;
 
   private Stack<int> instructionStack;
   private Stack<Object> operandStack;
@@ -66,6 +79,26 @@ public class XtellaVM {
     programCounter = 0;
     stackPointer = 0;
     framePointer = 0;
+  }
+
+  public static int getProgramCounter() {
+    return programCounter;
+  }
+
+  public static int getStackPointer() {
+    return stackPointer;
+  }
+
+  public static int getFramePointer() {
+    return framePointer;
+  }
+
+  public static int getScopeNumber() {
+    return scopeNumber;
+  }
+
+  public static int getLastExitCode() {
+    return lastExitCode;
   }
 
   private static int newFrame() {
@@ -814,6 +847,196 @@ public class XtellaVM {
 
     t.start();
     t.join();
+  }
+
+  private void executeOpenFileForReading() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for OPEN_FILE");
+    }
+
+    Object filenameObject = operandStack.pop();
+
+    if (filenameObject instanceof String) {
+      String filename = (String) filenameObject;
+
+      try {
+        FileReader fileReader = new FileReader(new File(filename));
+        operandStack.push(fileReader);
+      } catch (FileNotFoundException e) {
+        throw new RuntimeException("Error opening file: " + filename, e);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for OPEN_FILE");
+    }
+
+    framePointer++;
+  }
+
+  private void executeOpenFileForWriting() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for OPEN_FILE");
+    }
+
+    Object filenameObject = operandStack.pop();
+
+    if (filenameObject instanceof String) {
+      String filename = (String) filenameObject;
+
+      try {
+        FileWriter fileWriter = new FileWriter(new File(filename));
+        operandStack.push(fileWriter);
+      } catch (FileNotFoundException e) {
+        throw new RuntimeException("Error opening file: " + filename, e);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for OPEN_FILE");
+    }
+
+    framePointer++;
+  }
+
+  private void executeOpenFileForReadingAndWriting() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException(
+          "Not enough operands on the stack for OPEN_FILE_FOR_READING_AND_WRITING");
+    }
+
+    Object filePathObject = operandStack.pop();
+
+    if (filePathObject instanceof String) {
+      String filePath = (String) filePathObject;
+      File file = new File(filePath);
+
+      try {
+        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+        operandStack.push(randomAccessFile);
+      } catch (FileNotFoundException e) {
+        throw new RuntimeException("File not found: " + filePath, e);
+      } catch (IOException e) {
+        throw new RuntimeException("Error opening file: " + filePath, e);
+      }
+    } else {
+      throw new IllegalArgumentException(
+          "Invalid operand type for OPEN_FILE_FOR_READING_AND_WRITING");
+    }
+
+    framePointer++;
+  }
+
+  private void executeCloseFile() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for CLOSE_FILE");
+    }
+
+    Object fileObject = operandStack.pop();
+
+    if (fileObject instanceof Closeable) {
+      Closeable fileToClose = (Closeable) fileObject;
+
+      try {
+        fileToClose.close();
+      } catch (IOException e) {
+        throw new RuntimeException("Error closing file", e);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for CLOSE_FILE");
+    }
+  }
+
+  private void executeReadFileForReading() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for READ_FILE");
+    }
+
+    Object fileObject = operandStack.pop();
+
+    if (fileObject instanceof FileReader) {
+      FileReader fileReader = (FileReader) fileObject;
+      try (BufferedReader reader = new BufferedReader(fileReader)) {
+        StringBuilder content = new StringBuilder();
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+          content.append(line).append(System.lineSeparator());
+        }
+
+        operandStack.push(content.toString().trim());
+      } catch (IOException e) {
+        throw new RuntimeException("Error reading file", e);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for READ_FILE");
+    }
+
+    framePointer++;
+  }
+
+  private void executeReadLineFromFile() {
+    if (operandStack.size() < 1) {
+      throw new IllegalStateException("Not enough operands on the stack for READ_LINE_FROM_FILE");
+    }
+
+    Object fileObject = operandStack.pop();
+
+    if (fileObject instanceof FileReader || fileObject instanceof RandomAccessFile) {
+      FileReader fileReader = (FileReader) fileObject;
+      try (BufferedReader reader = new BufferedReader(fileReader)) {
+        String line = reader.readLine();
+        operandStack.push(line != null ? line : "");
+      } catch (IOException e) {
+        throw new RuntimeException("Error reading line from file", e);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid operand type for READ_LINE_FROM_FILE");
+    }
+
+    framePointer++;
+  }
+
+  private void executeWriteFile() {
+    if (operandStack.size() < 2) {
+      throw new IllegalStateException("Not enough operands on the stack for WRITE_FILE");
+    }
+
+    Object fileObject = operandStack.pop();
+    Object contentObject = operandStack.pop();
+
+    if ((fileObject instanceof FileWriter || fileObject instanceof RandomAccessFile)
+        && contentObject instanceof String) {
+      FileWriter fileWriter = (FileWriter) fileObject;
+      String content = (String) contentObject;
+      try (BufferedWriter writer = new BufferedWriter(fileWriter)) {
+        writer.write(content);
+      } catch (IOException e) {
+        throw new RuntimeException("Error writing to file", e);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid operand types for WRITE_FILE");
+    }
+
+    framePointer++;
+  }
+
+  private void executeAppendFile() {
+    if (operandStack.size() < 2) {
+      throw new IllegalStateException("Not enough operands on the stack for APPEND_FILE");
+    }
+
+    Object fileObject = operandStack.pop();
+    Object contentObject = operandStack.pop();
+
+    if ((fileObject instanceof FileWriter || fileObject instanceof RandomAccessFile)
+        && contentObject instanceof String) {
+      FileWriter fileWriter = (FileWriter) fileObject;
+      String content = (String) contentObject;
+      try (BufferedWriter writer = new BufferedWriter(fileWriter)) {
+        writer.append(content);
+      } catch (IOException e) {
+        throw new RuntimeException("Error appending to file", e);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid operand types for APPEND_FILE");
+    }
   }
 
   public static void executeVM(int programCounter) {}
