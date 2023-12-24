@@ -6,10 +6,12 @@ macroDefine	  ::= "[syntax-meta]" identifier "(" macroParam { "," macroParam } "
 
 macroParam	  ::= "#" identifier
 
-statement         ::= assignStmt | controlFlowStmt | functionStmt | fileStmt | threadStmt
+statement         ::= assignStmt | controlFlowStmt | functionStmt | fileStmt | threadStmt | importStmt
+
+importStmt        ::= "import" identifier { "::" identifier } [ "from" identifer ]
 
 assignStmt        ::= "let" identifier "=" expression ";"
-controlFlowStmt   ::= ifStmt | whileStmt | jumpStmt | returnStmt | matchStmt | unlessstmt | forStmt | elifStmt | doInStmt
+controlFlowStmt   ::= ifStmt | whileStmt | jumpStmt | returnStmt | matchStmt | unlessstmt | forStmt | elifStmt | doInStmt | varianetStmt
 
 ifStmt            ::= "if" "(" condition ")" "do" block [ "else" block ] "end-if"
 elifStmt	  ::= "elif" "(" condition ")" "do" block 
@@ -23,7 +25,7 @@ jumpStmt          ::= "jump" expression ";"
 returnStmt        ::= "return" { expression } ";"
 varianetStmt	  ::= "type" identifier "=" varianet { "|" variant }
 
-functionStmt      ::= "let-fn" identifier "(" [ parameters ] ")" block
+functionStmt      ::= "func" identifier "(" [ parameters ] ")" block
 
 variant           ::= identifier { "of" identifier }
 
@@ -69,7 +71,7 @@ primaryExpr       ::= identifier
 		  | lambdaExpr
 		  | argumentBackRef
 
-argumentBackRef   ::= "$" integer
+argumentBackRef   ::= "$[" integer "]"
 
 functionCall      ::= identifier "(" [ arguments ] ")"
 arguments         ::= expression { "," expression }
