@@ -8,7 +8,7 @@ macroParam	  ::= "#" identifier
 
 statement         ::= assignStmt | controlFlowStmt | functionStmt | fileStmt | threadStmt | importStmt
 
-importStmt        ::= "import" identifier { "::" identifier } [ "from" identifer ]
+importStmt        ::= "import" identifier { "::" identifier } [ "from" identifier ]
 
 assignStmt        ::= "let" identifier "=" expression ";"
 controlFlowStmt   ::= ifStmt | whileStmt | jumpStmt | returnStmt | matchStmt | unlessstmt | forStmt | elifStmt | doInStmt | varianetStmt
@@ -56,7 +56,7 @@ lambdaExpr        ::= "(" parameters ")" "=>" block { "(" ")" }
 
 ternaryExpr 	  ::= condition "?" expression ":" expression
 
-unaryExpr         ::= [ ( "+" | "-" | "!" ) ] primaryExpr
+unaryExpr         ::= [ ( "+" | "-" | "!" | "$" ) ] primaryExpr
 
 primaryExpr       ::= identifier
                   | number
@@ -71,7 +71,7 @@ primaryExpr       ::= identifier
 		  | lambdaExpr
 		  | argumentBackRef
 
-argumentBackRef   ::= "$[" integer "]"
+argumentBackRef   ::= "#[" integer "]"
 
 functionCall      ::= identifier "(" [ arguments ] ")"
 arguments         ::= expression { "," expression }
@@ -84,7 +84,7 @@ keyValues        ::= expression ":" expression { "," expression ":" expression }
 
 regexMatch       ::= expression "~" expression
 
-regexNoMatch	 ::= expression "!~" expression
+regexNoMatch      ::= expression "!~" expression
 
 execCommand      ::= "exec-pipe" expression ";"
 
