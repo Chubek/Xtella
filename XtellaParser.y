@@ -46,38 +46,36 @@ unless_stmt       : UNLESS LPAREN condition RPAREN DO block END
 
 block             : LBRACE statement_list RBRACE
 
-expression        : logical_or_expr
-                  | UNDERSCORE
 
-logical_or_expr   : logical_and_expr
-                  | logical_or_expr OR logical_and_expr
+expression       : compound_expr | UNDERLINE
 
-logical_and_expr  : equality_expr
-                  | logical_and_expr AND equality_expr
-
-equality_expr     : relational_expr
-                  | equality_expr EQ relational_expr
-                  | equality_expr NEQ relational_expr
-
-relational_expr   : additive_expr
-                  | relational_expr LT additive_expr
-                  | relational_expr LTE additive_expr
-                  | relational_expr GT additive_expr
-                  | relational_expr GTE additive_expr
-
-additive_expr     : multiplicative_expr
-                  | additive_expr PLUS multiplicative_expr
-                  | additive_expr MINUS multiplicative_expr
-
-multiplicative_expr: unary_expr
-                  | multiplicative_expr MULTIPLY unary_expr
-                  | multiplicative_expr DIVIDE unary_expr
-                  | multiplicative_expr MODULO unary_expr
+compound_expr    : primary_expr
+		  | unary_expr
+		  | LPAREN expression RPAREN
+                  | primary_expr OR compund_expr
+                  | primary_expr AND compound_expr
+		  | primary_expr BIT_AND compound_expr
+		  | primary_expr BIT_OR compound_expr
+		  | primary_expr BIT_XOR compound_expr
+	          | primary_expr EQ  compound_expr
+                  | primary_expr NEQ compound_expr
+                  | primary_expr LT compound_expr
+                  | primary_expr LTE compound_expr
+                  | primary_expr GT compound_expr
+                  | primary_expr GTE compound_expr
+                  | primary_expr PLUS compound_expr
+                  | primary_expr MINUS compound_expr
+                  | primary_expr MULTIPLY compound_expr
+                  | primary_expr DIVIDE compound_expr
+                  | primary_expr MODULO compound_expr
+		  | primary_expr POW compound_expr
+	  | 
 
 unary_expr        : primary_expr
                   | PLUS unary_expr
                   | MINUS unary_expr
                   | NOT unary_expr
+		  | BIT_NOT unary_expr
                   | DOLLAR unary_expr
 
 primary_expr      : IDENTIFIER
@@ -108,107 +106,89 @@ hashmap          : LBRACE key_values RBRACE
 key_values        : expression COLON expression
                   | key_values COMMA expression COLON expression
 
-regex_match       : expression TILDE expression
-
 exec_command      : EXEC_PIPE expression SEMICOLON
 
 condition        : expression
 
-identifier       : LETTER
-                  | LETTER identifier_tail
-
-identifier_tail  : LETTER
-                  | DIGIT
-                  | UNDERSCORE
-                  | identifier_tail LETTER
-                  | identifier_tail DIGIT
-                  | identifier_tail UNDERSCORE
 
 number           : INTEGER
                   | FLOATING_POINT
 
-integer          : DIGIT
-                  | INTEGER DIGIT
+float            : FLOAT_NUM	
+		  | SCI_NUM	
 
-floating_point    : DIGIT DOT DIGIT
-                  | DIGIT DOT DIGIT FLOATING_POINT_SUFFIX
+integer          : DECIMAL_NUM			
+		 | BIN_NUM_PREFIX BIN_NUM	
+		 | HEX_NUM_PREFIX HEX_NUM	
+		 | OCT_NUM_PREFIX OCT_NUM	
+                  
 
-hex_num          : HEX_PREFIX HEX_DIGIT
-                 | HEX_PREFIX HEX_DIGIT hex_num_suffix
 
-hex_num_suffix   : HEX_DIGIT
-                  | hex_num_suffix HEX_DIGIT
+multi_ln_quoted_string : quote_openers multi_ln_quoted_str_body quote_closers 
+		       {
+		          if ($1 != $3) 
+			  $$ = $2;
+		       }
 
-oct_num          : OCT_PREFIX OCT_DIGIT
-                  | OCT_PREFIX OCT_DIGIT oct_num_suffix
+multi_ln_quoted_str_body  : character		      
+		 | NEWLINE			      
+		 | quoted_str_body character	      
 
-oct_num_suffix   : OCT_DIGIT
-                  | oct_num_suffix OCT_DIGIT
 
-bin_num          : BIN_PREFIX BIN_DIGIT
-                  | BIN_PREFIX BIN_DIGIT bin_num_suffix
+quote_closers    : SLASH        
+                  | GT		
+                  | RPAREN      
+                  | RBRACE	
+                  | PERCENT	
+                  | RSQUARE	
 
-bin_num_suffix   : BIN_DIGIT
-                  | bin_num_suffix BIN_DIGIT
+quote_openers    : Q_SLASH      
+                  | Q_LT	
+                  | Q_LPAREN    
+                  | Q_LBRACE	
+                  | Q_PERCENT   
+                  | Q_LSQUARE	
 
-multi_ln_quoted_string : quote_openers character quote_closers
+multi_ln_string  : BACKTICK multi_ln_string_body BACKTICK	   
 
-quote_closers    : SLASH
-                  | GT
-                  | RPAREN
-                  | RBRACE
-                  | PERCENT
-                  | RSQUARE
+multi_ln_string_body : character				   
+		  | NEWLINE					   
+                  | multi_ln_string_body character		   
+                  | multi_ln_string_body DOLLAR expression RPAREN  
 
-quote_openers    : Q_SLASH
-                  | Q_LT
-                  | Q_LPAREN
-                  | Q_LBRACE
-                  | Q_PERCENT
-                  | Q_LSQUARE
+quoted_string    : SQUOTE quoted_str_body SQUOTE	  
 
-multi_ln_string  : BACKTICK multi_ln_string_body BACKTICK
+quoted_str_body  : character				  
+		 | quoted_str_body character		  
 
-multi_ln_string_body : character
-                  | multi_ln_string_body character
-                  | multi_ln_string_body DOLLAR expression RPAREN
+string           : DQUOTE string_body DQUOTE		  
 
-quoted_string    : SQUOTE character SQUOTE
+string_body      : character				  
+                  | string_body character		  
+                  | string_body DOLLAR expression RPAREN  
 
-string           : DQUOTE string_body DQUOTE
+character        : LETTER				
+                  | c_escapes				
 
-string_body      : character
-                  | string_body character
-                  | string_body DOLLAR expression RPAREN
+c_escapes        : SQUOTE				
+                  | DQUOTE				
+                  | QUESTION				
+                  | BACKSLASH				
+                  | LOWERCASE_A				
+                  | LOWERCASE_B				
+                  | LOWERCASE_F				
+                  | LOWERCASE_N				
+                  | LOWERCASE_R				
+                  | LOWERCASE_T				
+                  | LOWERCASE_V				
+                  | uni_escape				
+		  | hex_escape				
+                  | oct_escape				
 
-character        : LETTER
-                  | c_escapes
+uni_escape	 : BACKSLACK UPLUS HEX_NUM		
 
-letter           : LOWERCASE
-                  | UPPERCASE
+hex_escape       : BACKSLASH LOWERCASE_X HEX_NUM	
 
-digit            : DIGIT
+oct_escape       : BACKSLASH OCT_NUM			
 
-hex_digit        : HEX_DIGIT
-
-oct_digit        : OCT_DIGIT
-
-c_escapes        : SQUOTE
-                  | DQUOTE
-                  | QUESTION
-                  | BACKSLASH
-                  | LOWERCASE_A
-                  | LOWERCASE_B
-                  | LOWERCASE_F
-                  | LOWERCASE_N
-                  | LOWERCASE_R
-                  | LOWERCASE_T
-                  | LOWERCASE_V
-                  | DIGIT
-                  | hex_escape
-                  | oct_escape
-
-hex_escape       : BACKSLASH LOWERCASE_X hex_digit
-
-oct_escape       : BACKSLASH oct_digit
 
