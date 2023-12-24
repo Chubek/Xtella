@@ -1,4 +1,10 @@
-program           ::= { statement }
+program           ::= { statement | macroDefine | macroCall }
+
+macroCall	  ::= identifier "!" "(" expression { "," expression } ")"
+
+macroDefine	  ::= "[syntax-meta]" identifier "(" macroParam { "," macroParam } ")" "{" { statement }  | macroParam "}"
+
+macroParam	  ::= "#" identifier
 
 statement         ::= assignStmt | controlFlowStmt | functionStmt | fileStmt | threadStmt
 
@@ -15,8 +21,11 @@ matchCase	  ::= "|" expression "=>" block ","
 doInStmt	  ::= "do" "(" expression ")" "in" expression "end-do"
 jumpStmt          ::= "jump" expression ";"
 returnStmt        ::= "return" { expression } ";"
+varianetStmt	  ::= "type" identifier "=" varianet { "|" variant }
 
-functionStmt      ::= "function" identifier "(" [ parameters ] ")" block
+functionStmt      ::= "let-fn" identifier "(" [ parameters ] ")" block
+
+variant           ::= identifier { "of" identifier }
 
 parameters        ::= identifier { "," identifier }
 
@@ -28,14 +37,14 @@ readFileStmt      ::= "read" "file" "for" "reading" expression ";"
 writeFileStmt     ::= "write" "file" expression "with" expression ";"
 appendFileStmt    ::= "append" "file" expression "with" expression ";"
 
-threadStmt        ::= "run" "thread" identifier { "and" "join" } ";"
+threadStmt        ::= "run" "thread" identifier [ "and" "join" ] ";"
 
 block             ::= "{" { statement } "}"
 
 expression        ::= logicalOrExpr | "_"
 
-logicalOrExpr     ::= logicalAndExpr { "||" logicalAndExpr }
-logicalAndExpr    ::= equalityExpr { "&&" equalityExpr }
+logicalOrExpr     ::= logicalAndExpr { "or?" logicalAndExpr }
+logicalAndExpr    ::= equalityExpr { "and?" equalityExpr }
 equalityExpr      ::= relationalExpr { ( "==" | "!=" ) relationalExpr }
 relationalExpr    ::= additiveExpr { ( "<" | "<=" | ">" | ">=" ) additiveExpr }
 additiveExpr      ::= multiplicativeExpr { ( "+" | "-" ) multiplicativeExpr }
@@ -45,7 +54,7 @@ lambdaExpr        ::= "(" parameters ")" "=>" block { "(" ")" }
 
 ternaryExpr 	  ::= condition "?" expression ":" expression
 
-unaryExpr         ::= [ ( "+" | "-" | "!" | "$" ) ] primaryExpr
+unaryExpr         ::= [ ( "+" | "-" | "!" ) ] primaryExpr
 
 primaryExpr       ::= identifier
                   | number
@@ -58,6 +67,9 @@ primaryExpr       ::= identifier
                   | execCommand
 		  | ternaryExpr
 		  | lambdaExpr
+		  | argumentBackRef
+
+argumentBackRef   ::= "$" integer
 
 functionCall      ::= identifier "(" [ arguments ] ")"
 arguments         ::= expression { "," expression }
@@ -70,6 +82,8 @@ keyValues        ::= expression ":" expression { "," expression ":" expression }
 
 regexMatch       ::= expression "~" expression
 
+regexNoMatch	 ::= expression "!~" expression
+
 execCommand      ::= "exec-pipe" expression ";"
 
 
@@ -79,13 +93,32 @@ identifier       ::= letter { letter | digit | "_" }
 
 number           ::= integer | floatingPoint
 integer          ::= digit { digit }
+hexNum		 ::= ( "0x" | "0X" ) { hexDigit }
+octNum		 ::= ( "0o" | "oO" ) { octDigit }
+binNum		 ::= ( "0b" | "0B" ) { "0" | "1" }
 floatingPoint    ::= digit { digit } "." digit { digit }
 
-string           ::= "\"" { character } "\""
-character        ::= any-unicode-character-except-double-quote
+
+multiLnQuotedString ::= quoteOpeners { character } quoteClosers
+
+quoteClosers	 ::= "/" | ">" | ")" | "}" | "%" | "]"
+quoteOpeners	 ::= "q/" | "q<" | "q(" | "q{" | "q%" | "q["
+
+multiLnString 	 ::= "`" { character | "${" expression "}" } "`"
+
+quotedString	 ::= "'"  { character } "'"
+string           ::= "\"" { character | "${" expression "}" } "\""
+character 	 ::= { letter } | cEscapes
 
 letter           ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
 digit            ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+hexDigit	 ::= "0" | "1" | ... | "9" | "A" | "B" | ... | "F" | "a" | ... | "f"
+octDigit	 ::= "0" | "1" | ... | "7"
 
-any-unicode-character-except-double-quote ::= ...
+cEscapes 	 ::= "'" | "\"" | "?" | "\\" | "a" | "b" | "f" | "n" | "r" | "t" | "v" | "0" | hexEscape | octEscape
+hexEscape 	 ::= "\\x" { hexDigit }
+octEscape        ::= "\" { octDigit }
+
+
+
 
