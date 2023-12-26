@@ -1,126 +1,174 @@
-program           ::= { statement | macroDefine | macroCall }
+program            = statement_list .
 
-macroCall	  ::= identifier "!" "(" expression { "," expression } ")"
+statement_list     = { statement | statement_list statement } .
 
-macroDefine	  ::= "[syntax-meta]" identifier "(" macroParam { "," macroParam } ")" "{" { statement }  | macroParam "}"
+statement          = assign_stmt
+                   | control_flow_stmt
+                   | function_stmt
+                   | rw_stmt
+                   | exec_stmt
+                   | open_stmt
+                   | close_stmt
+                   .
 
-macroParam	  ::= "#" identifier
+assign_stmt        = IDENTIFIER (BECOMES | EQUALS) expression
+                   | IDENTIFIER LBRACK expression RBRACK EQUALS expression
+                   | LET IDENTIFIER EQUALS expression
+                   .
 
-statement         ::= assignStmt | controlFlowStmt | functionStmt | fileStmt | threadStmt | importStmt
+control_flow_stmt  = if_stmt
+                   | while_stmt
+                   | for_stmt
+                   | return_stmt
+                   | match_stmt
+                   | unless_stmt
+                   .
 
-importStmt        ::= "import" identifier { "::" identifier } [ "from" identifier ]
+exec_stmt          = EXEC DOUBLE_LT CHARSEQ_WITH_NEWLINE DOUBLE_GT
+                   .
 
-assignStmt        ::= "let" identifier "=" expression ";"
-controlFlowStmt   ::= ifStmt | whileStmt | jumpStmt | returnStmt | matchStmt | unlessstmt | forStmt | elifStmt | doInStmt | varianetStmt
+rw_stmt            = READ FILEHANDLE INTO IDENTIFIER
+                   | READ string_const INTO IDENTIFIER
+                   | WRITE expression FILEHANDLE FILEHANDLE
+                   | APPEND expression INTO FILEHANDLE
+                   .
 
-ifStmt            ::= "if" "(" condition ")" "do" block [ "else" block ] "end-if"
-elifStmt	  ::= "elif" "(" condition ")" "do" block 
-whileStmt         ::= "while" "(" condition ")" "do" block "end-while"
-unlessStmt        ::= "unless" "(" condition ")" "do" block "end-unless"
-forStmt		  ::= "for" expression "in" expression "do" block "end-for"
-matchStmt	  ::= "match" expression "with" matchCase "end-match"
-matchCase	  ::= "|" expression "=>" block ","
-doInStmt	  ::= "do" "(" expression ")" "in" expression "end-do"
-jumpStmt          ::= "jump" expression ";"
-returnStmt        ::= "return" { expression } ";"
-varianetStmt	  ::= "type" identifier "=" varianet { "|" variant }
+close_stmt         = CLOSE FILEHANDLE
+                   .
 
-functionStmt      ::= "func" identifier "(" [ parameters ] ")" block
+open_stmt          = OPEN string_const FOR rw_mode
+                   | OPEN string_const FOR rw_mode AS FILEHANDLE
+                   .
 
-variant           ::= identifier { "of" identifier }
+rw_mode            = READING
+                   | WRITING
+                   | APPENDING
+                   | READ_AND_WRITE
+                   .
 
-parameters        ::= identifier { "," identifier }
+if_stmt            = IF LPAREN condition RPAREN DO block ELSE block END
+                   .
 
-fileStmt          ::= openFileStmt | closeFileStmt | readFileStmt | writeFileStmt | appendFileStmt
+while_stmt         = WHILE LPAREN condition RPAREN DO block END
+                   .
 
-openFileStmt      ::= "open" "file" "for" ( "reading" | "writing" | "reading-and-writing" ) expression ";"
-closeFileStmt     ::= "close" "file" expression ";"
-readFileStmt      ::= "read" "file" "for" "reading" expression ";"
-writeFileStmt     ::= "write" "file" expression "with" expression ";"
-appendFileStmt    ::= "append" "file" expression "with" expression ";"
+for_stmt           = FOR expression IN expression DO block END
+                   .
 
-threadStmt        ::= "run" "thread" identifier [ "and" "join" ] ";"
+return_stmt        = RETURN expression SEMICOLON
+                   .
 
-block             ::= "{" { statement } "}"
+match_stmt         = MATCH expression WITH match_case_list END
+                   .
 
-expression        ::= logicalOrExpr | "_"
+match_case_list    = match_case { COMMA match_case } .
 
-logicalOrExpr     ::= logicalAndExpr { "or?" logicalAndExpr }
-logicalAndExpr    ::= equalityExpr { "and?" equalityExpr }
-equalityExpr      ::= relationalExpr { ( "==" | "!=" ) relationalExpr }
-relationalExpr    ::= additiveExpr { ( "<" | "<=" | ">" | ">=" ) additiveExpr }
-additiveExpr      ::= multiplicativeExpr { ( "+" | "-" ) multiplicativeExpr }
-multiplicativeExpr ::= unaryExpr { ( "*" | "/" | "%" ) unaryExpr }
+match_case         = PIPE expression ARROW block COMMA
+                   .
 
-lambdaExpr        ::= "(" parameters ")" "=>" block { "(" ")" }
+unless_stmt        = UNLESS LPAREN condition RPAREN DO block END
+                   .
 
-ternaryExpr 	  ::= condition "?" expression ":" expression
+function_stmt      = DEFUN IDENTIFIER LPAREN identifier_list LPAREN block
+                   .
 
-unaryExpr         ::= [ ( "+" | "-" | "!" | "$" ) ] primaryExpr
+identifier_list    = { IDENTIFIER { COMMA IDENTIFIER } } .
 
-primaryExpr       ::= identifier
-                  | number
-                  | string
-                  | "(" expression ")"
-                  | functionCall
-                  | array
-                  | hashmap
-                  | regexMatch
-                  | execCommand
-		  | ternaryExpr
-		  | lambdaExpr
-		  | argumentBackRef
+block              = LCURLY statement_list RCURLY
+                   .
 
-argumentBackRef   ::= "#[" integer "]"
+expression         = compound_expr | UNDERLINE | regex_match | regex_nonmatch | ternary_expr
+                   .
 
-functionCall      ::= identifier "(" [ arguments ] ")"
-arguments         ::= expression { "," expression }
+compound_expr      = unary_expr { binary_op unary_expr } .
 
-array            ::= "[" [ arrayElements ] "]"
-arrayElements    ::= expression { "," expression }
+binary_op          = OR | AND | BIT_AND | BIT_OR | BIT_XOR | EQ | NEQ | LT | LTE | GT | GTE | PLUS | MINUS | MULTIPLY | DIVIDE | MODULO | POW | PIPES_LEFT | PIPES_RIGHT
+                   .
 
-hashmap          ::= "{" [ keyValues ] "}"
-keyValues        ::= expression ":" expression { "," expression ":" expression }
+unary_expr         = primary_expr | U_PLUS unary_expr | U_MINUS unary_expr | NEG unary_expr | BIT_NOT unary_expr | DOLLAR unary_expr
+                   .
 
-regexMatch       ::= expression "~" expression
+primary_expr       = IDENTIFIER | IDENTIFIER LBRACK expression RBRACK | const_value | function_call | lambda_expr
+                   .
 
-regexNoMatch      ::= expression "!~" expression
+function_call      = IDENTIFIER LPAREN argument_list RPAREN
+                   .
 
-execCommand      ::= "exec-pipe" expression ";"
+ternary_expr       = expression QMARK expression COLON expression
+                   .
 
+lambda_expr        = LBRACK argument_list RBRACK ARROW block SEMICOLON
+                   .
 
-condition        ::= expression
+argument_list      = expression { COMMA expression }
+                   .
 
-identifier       ::= letter { letter | digit | "_" }
+regex_match        = expression REG_MATCHES regex_const
+                   .
 
-number           ::= integer | floatingPoint
-integer          ::= digit { digit }
-hexNum		 ::= ( "0x" | "0X" ) { hexDigit }
-octNum		 ::= ( "0o" | "oO" ) { octDigit }
-binNum		 ::= ( "0b" | "0B" ) { "0" | "1" }
-floatingPoint    ::= digit { digit } "." digit { digit }
+regex_nonmatch     = expression REG_NOT_MATCHES regex_const
+                   .
 
+const_value        = array | hashmap | number | string_const
+                   .
 
-multiLnQuotedString ::= quoteOpeners { character } quoteClosers
+array              = LCURLY array_elements RCURLY
+                   .
 
-quoteClosers	 ::= "/" | ">" | ")" | "}" | "%" | "]"
-quoteOpeners	 ::= "q/" | "q<" | "q(" | "q{" | "q%" | "q["
+array_elements     = expression { COMMA expression }
+                   .
 
-multiLnString 	 ::= "`" { character | "${" expression "}" } "`"
+hashmap            = LCURLY key_values RCURLY
+                   .
 
-quotedString	 ::= "'"  { character } "'"
-string           ::= "\"" { character | "${" expression "}" } "\""
-character 	 ::= { letter } | cEscapes
+key_values         = expression COLON expression { COMMA expression COLON expression }
+                   .
 
-letter           ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
-digit            ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-hexDigit	 ::= "0" | "1" | ... | "9" | "A" | "B" | ... | "F" | "a" | ... | "f"
-octDigit	 ::= "0" | "1" | ... | "7"
+condition          = expression
+                   .
 
-cEscapes 	 ::= "'" | "\"" | "?" | "\\" | "a" | "b" | "f" | "n" | "r" | "t" | "v" | "0" | hexEscape | octEscape
-hexEscape 	 ::= "\\x" { hexDigit }
-octEscape        ::= "\" { octDigit }
+number             = integer | float
+                   .
 
+float              = FLOAT_NUM | SCI_NUM
+                   .
 
+integer            = DCIMAL_NUM | BIN_NUM_PREFIX BIN_NUM | HEX_NUM_PREFIX HEX_NUM | OCT_NUM_PREFIX OCT_NUM
+                   .
 
+string_const       = mln_qstring | mln_fstring | qstring | fstring
+                   .
 
+regex_const        = regex_opener CHARSEQ_WITHOUT_NEWLINE regex_closer
+                   .
+
+regex_closer       = SLASH | GT | LCURLY | LPAREN | PERCENT | LBRACK
+                   .
+
+regex_opener       = M_SLASH | M_LT | M_LCURLY | M_LPAREN | M_PERCENT | M_LBRACK
+                   .
+
+mln_fstring        = TRIPLE_QUOTE mln_fstring_body TRIPLE_QUOTE
+                   .
+
+mln_fstring_body   = CHARSEQ_WITH_NEWLINE | DOLLAR_LCURLY expression RCURLY
+                   .
+
+mln_qstring        = quote_openers CHARSEQ_WITH_NEWLINE quote_closers
+                   .
+
+quote_closers      = SLASH | GT | RPAREN | RCURLY | PERCENT | RBRACK
+                   .
+
+quote_openers      = Q_SLASH | Q_LT | Q_LPAREN | Q_LCURLY | Q_PERCENT | Q_LBRACK
+                   .
+
+fstring            = DQUOTE fstring_body DQUOTE
+                   .
+
+fstring_body       = CHARSEQ_WITHOUT_NEWLINE | DOLLAR_LCURLY expression RCURLY
+                   .
+
+qstring            = SQUOTE CHARSEQ_WITHOUT_NEWLINE SQUOTE
+                   .
+E
