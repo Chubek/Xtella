@@ -1,6 +1,6 @@
-%token IDENTIFIER LET FILEHANDLE
+%token IDENTIFIER IDENTIFIER_LBRACK LET FILEHANDLE
 %token EQUALS BECOMES
-%token PERCENT DOLLAR SQUOTE DQUOTE BACKTICK PIPE SLASH NEWLINE LETTER DOLLAR_LCURLY TRIPLE_QUOTE
+%token PERCENT DOLLAR SQUOTE DQUOTE BACKTICK PIPE SLASH NEWLINE LETTER DOLLAR_LCURLY TRIPLE_QUOTE DOUBLE_COLON
 %token CHARSEQ_WITH_NEWLINE CHARSEQ_WITHOUT_NEWLINE
 %token OCT_NUM HEX_NUM BIN_NUM
 %token BIT_XOR BIT_AND BIT_NOT BIT_OR UNDERLINE U_PLUS U_MINUS NEG
@@ -26,6 +26,8 @@
 %token Q_LT Q_LPAREN Q_LCURLY Q_PERCENT Q_LBRACK
 %token M_LT M_LCURLY M_LPAREN M_PERCENT M_LBRACK
 %token C_ESCAPES UNICODE_ESCAPES HEX_ESCAPES OCT_ESCAPES
+%token IDENTIFIER_HASHMAP IDENTIFIER_SCALAR IDENTIFIER_ARRAY IDENTIFIER_FUNCTION IDENTIFIER_VARIANT
+%token IDENTIFIER_INDEXED END_INDEX
 
 %left OR
 %left AND
@@ -83,12 +85,8 @@ statement         : assign_stmt
 		   | close_stmt
 		   ;
 
-assign_stmt       : IDENTIFIER BECOMES expression
-                   | IDENTIFIER EQUALS expression
-		   | IDENTIFIER LBRACK expression RBRACK EQUALS expression
-		   | LET IDENTIFIER EQUALS expression
-		   ;
-
+assign_stmt       : non_indexed_ident BECOMES expression
+		   | indexed_ident BECOMES expression
 
 control_flow_stmt : if_stmt
                    | while_stmt
@@ -155,7 +153,6 @@ identifier_list   : /* empty */
 block             : LCURLY statement_list RCURLY
 		   ;
 
-
 expression       : compound_expr 
 		  | UNDERLINE 
 		  | regex_match 
@@ -194,13 +191,22 @@ unary_expr        : primary_expr
                    | DOLLAR unary_expr
 		   ;
 
-primary_expr      : IDENTIFIER
-		   | IDENTIFIER LBRACK expression RBRACK
-		   | const_value
+primary_expr      : const_value
                    | function_call
                    | lambda_expr
+		   | indexed_ident
+		   | non_indexed_ident
 		   ;
 
+indexed_ident     : IDENTIFIER_INDEXED const_value END_INDEX
+		  ;
+
+non_indexed_ident : IDENTIFIER_FUNCTION
+		   | IDENTIFIER_HASHMAP
+		   | IDENTIFIER_ARRAY
+		   | IDENTIFIER_SCALAR
+		   | IDENTIFIER_VARIANT
+		    ;
 
 function_call     : IDENTIFIER LPAREN argument_list RPAREN
 		   ;
