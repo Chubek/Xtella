@@ -75,334 +75,334 @@ public class XtellaVM {
   private int lastExitCode;
 
   public XtellaVM() {
-    instructionStack = new Stack<>();
-    operandStack = new Stack<>();
-    scopes = new ArrayList<>();
-    programCounter = 0;
-    stackPointer = 0;
-    framePointer = 0;
+    this.instructionStack = new Stack<>();
+    this.operandStack = new Stack<>();
+    this.scopes = new ArrayList<>();
+    this.programCounter = 0;
+    this.stackPointer = 0;
+    this.framePointer = 0;
   }
 
   public static int getProgramCounter() {
-    return programCounter;
+    return this.programCounter;
   }
 
   public static int getStackPointer() {
-    return stackPointer;
+    return this.stackPointer;
   }
 
   public static int getFramePointer() {
-    return framePointer;
+    return this.framePointer;
   }
 
   public static int getScopeNumber() {
-    return scopeNumber;
+    return this.scopeNumber;
   }
 
   public static int getLastExitCode() {
-    return lastExitCode;
+    return this.lastExitCode;
   }
 
   private static int newFrame() {
-    framePointer = stackPointer;
+    this.framePointer = this.stackPointer;
     Map<String, Object> newScope = new HashMap<>();
-    scopes.add(newScope);
-    return scopeNumber++;
+    this.scopes.add(newScope);
+    return this.scopeNumber++;
   }
 
   private static void dropFrame(int rmIndex) {
-    scopes.remove(rmIndex);
-    stackPointer += framePointer;
-    scopesNumber--;
+    this.scopes.remove(rmIndex);
+    this.stackPointer += this.framePointer;
+    this.scopesNumber--;
   }
 
   private static Object getInScope(String identifier) {
-    return scopes.get(scopeNumber).get(identifier);
+    return this.scopes.get(this.scopeNumber).get(identifier);
   }
 
   private static void putInScope(String identifier, Object object) {
-    scopes.get(scopeNumber).put(identifier, object);
+    this.scopes.get(this.scopeNumber).put(identifier, object);
   }
 
   private void executePushInt() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for PUSH_INT");
     }
 
-    Object intValue = operandStack.pop();
+    Object intValue = this.operandStack.pop();
 
     if (intValue instanceof Integer) {
-      operandStack.push(intValue);
+      this.operandStack.push(intValue);
     } else {
       throw new IllegalArgumentException("Invalid operand type for PUSH_INT");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executePushString() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for PUSH_STRING");
     }
 
-    Object stringValue = operandStack.pop();
+    Object stringValue = this.operandStack.pop();
 
     if (stringValue instanceof String) {
-      operandStack.push(stringValue);
+      this.operandStack.push(stringValue);
     } else {
       throw new IllegalArgumentException("Invalid operand type for PUSH_STRING");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executePushFloat() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for PUSH_FLOAT");
     }
 
-    Object floatValue = operandStack.pop();
+    Object floatValue = this.operandStack.pop();
 
     if (floatValue instanceof Float) {
-      operandStack.push(floatValue);
+      this.operandStack.push(floatValue);
     } else {
       throw new IllegalArgumentException("Invalid operand type for PUSH_FLOAT");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executePushArray() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for PUSH_ARRAY");
     }
 
-    Object arrayObject = operandStack.pop();
+    Object arrayObject = this.operandStack.pop();
 
     if (arrayObject instanceof List<?>) {
-      operandStack.add(array);
+      this.operandStack.add(array);
     } else {
       throw new IllegalArgumentException("Invalid operand type for PUSH_ARRAY");
     }
 
-    framePointer += array.size();
+    this.framePointer += array.size();
   }
 
   private void executePushHashMap() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for PUSH_HASHMAP");
     }
 
-    Object hashMapValue = operandStack.pop();
+    Object hashMapValue = this.operandStack.pop();
 
     if (hashMapValue instanceof HashMap<?, ?>) {
-      operandStack.push(hashMapValue);
+      this.operandStack.push(hashMapValue);
     } else {
       throw new IllegalArgumentException("Invalid operand type for PUSH_HASHMAP");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeAdd() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for ADD");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand1 + (int) operand2;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else if (operand1 instanceof Float && operand2 instanceof Float) {
       float result = (float) operand1 + (float) operand2;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for ADD");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeSubtract() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for SUBTRACT");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand2 - (int) operand1;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else if (operand1 instanceof Float && operand2 instanceof Float) {
       float result = (float) operand2 - (float) operand1;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for SUBTRACT");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeMultiply() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for MULTIPLY");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand1 * (int) operand2;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else if (operand1 instanceof Float && operand2 instanceof Float) {
       float result = (float) operand1 * (float) operand2;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for MULTIPLY");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeDivide() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for DIVIDE");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand2 / (int) operand1;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else if (operand1 instanceof Float && operand2 instanceof Float) {
       float result = (float) operand2 / (float) operand1;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for DIVIDE");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeModulo() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for MODULO");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand2 % (int) operand1;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for MODULO");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeBitwiseAnd() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for BITWISE_AND");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand1 & (int) operand2;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for BITWISE_AND");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeBitwiseOr() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for BITWISE_OR");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand1 | (int) operand2;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for BITWISE_OR");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeBitwiseXor() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for BITWISE_XOR");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand1 ^ (int) operand2;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for BITWISE_XOR");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeShiftLeft() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for SHIFT_LEFT");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand2 << (int) operand1;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for SHIFT_LEFT");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeShiftRight() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for SHIFT_RIGHT");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof Integer && operand2 instanceof Integer) {
       int result = (int) operand2 >> (int) operand1;
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for SHIFT_RIGHT");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeEqual() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for EQUAL");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     boolean result;
 
@@ -416,17 +416,17 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for EQUAL");
     }
 
-    operandStack.push(result);
-    framePointer++;
+    this.operandStack.push(result);
+    this.framePointer++;
   }
 
   private void executeNotEqual() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for NOT_EQUAL");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     boolean result;
 
@@ -440,17 +440,17 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for NOT_EQUAL");
     }
 
-    operandStack.push(result);
-    framePointer++;
+    this.operandStack.push(result);
+    this.framePointer++;
   }
 
   private void executeLessThan() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for LESS_THAN");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     boolean result;
 
@@ -462,17 +462,17 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for LESS_THAN");
     }
 
-    operandStack.push(result);
-    framePointer++;
+    this.operandStack.push(result);
+    this.framePointer++;
   }
 
   private void executeLessThanOrEqual() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for LESS_THAN_OR_EQUAL");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     boolean result;
 
@@ -484,17 +484,17 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for LESS_THAN_OR_EQUAL");
     }
 
-    operandStack.push(result);
-    framePointer++;
+    this.operandStack.push(result);
+    this.framePointer++;
   }
 
   private void executeGreaterThan() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for GREATER_THAN");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     boolean result;
 
@@ -506,17 +506,17 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for GREATER_THAN");
     }
 
-    operandStack.push(result);
-    framePointer++;
+    this.operandStack.push(result);
+    this.framePointer++;
   }
 
   private void executeGreaterThanOrEqual() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for GREATER_THAN_OR_EQUAL");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     boolean result;
 
@@ -528,135 +528,135 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for GREATER_THAN_OR_EQUAL");
     }
 
-    operandStack.push(result);
-    framePointer++;
+    this.operandStack.push(result);
+    this.framePointer++;
   }
 
   private void executeReturn() {
-    if (framePointer == 0) {
+    if (this.framePointer == 0) {
       throw new IllegalStateException("Cannot RETURN from the main frame");
     }
 
-    framePointer--;
-    programCounter = 0;
+    this.framePointer--;
+    this.programCounter = 0;
   }
 
   private void executeJump() {
 
-    int targetIndex = (int) operandStack.get(programCounter);
+    int targetIndex = (int) this.operandStack.get(this.programCounter);
 
-    programCounter = targetIndex;
+    this.programCounter = targetIndex;
   }
 
   private void executeJumpIfTrue() {
 
-    boolean condition = (boolean) operandStack.pop();
+    boolean condition = (boolean) this.operandStack.pop();
 
-    int targetIndex = (int) operandStack.get(programCounter);
+    int targetIndex = (int) this.operandStack.get(this.programCounter);
 
     if (condition) {
 
-      programCounter = targetIndex;
+      this.programCounter = targetIndex;
     } else {
 
-      programCounter++;
+      this.programCounter++;
     }
   }
 
   private void executeJumpIfFalse() {
 
-    boolean condition = (boolean) operandStack.pop();
+    boolean condition = (boolean) this.operandStack.pop();
 
-    int targetIndex = (int) operandStack.get(programCounter);
+    int targetIndex = (int) this.operandStack.get(this.programCounter);
 
     if (!condition) {
 
-      programCounter = targetIndex;
+      this.programCounter = targetIndex;
     } else {
 
-      programCounter++;
+      this.programCounter++;
     }
   }
 
   private void executeLoadVariable() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for LOAD_VARIABLE");
     }
 
-    Object variableName = operandStack.pop();
+    Object variableName = this.operandStack.pop();
     Object variableValue = getInScope((String) variableName);
 
     if (variableValue == null) {
       throw new IllegalArgumentException("Variable not found: " + variableName);
     }
 
-    operandStack.push(variableValue);
-    framePointer++;
+    this.operandStack.push(variableValue);
+    this.framePointer++;
   }
 
   private void executeStoreVariable() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for STORE_VARIABLE");
     }
 
-    Object variableName = operandStack.pop();
-    Object variableValue = operandStack.pop();
+    Object variableName = this.operandStack.pop();
+    Object variableValue = this.operandStack.pop();
 
     putInScope((String) variableName, variableValue);
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeLoadVariableFromArray() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException(
           "Not enough operands on the stack for LOAD_VARIABLE_FROM_ARRAY");
     }
 
-    int index = (int) operandStack.pop();
-    Object arrayName = operandStack.pop();
+    int index = (int) this.operandStack.pop();
+    Object arrayName = this.operandStack.pop();
 
     Object array = getInScope((String) arrayName);
 
     if (array instanceof Object[] && index >= 0 && index < ((Object[]) array).size()) {
       Object value = ((Object[]) array)[index];
-      operandStack.push(value);
+      this.operandStack.push(value);
     } else {
       throw new IllegalArgumentException("Invalid array or index for LOAD_VARIABLE_FROM_ARRAY");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeLoadVariableFromHashMap() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException(
           "Not enough operands on the stack for LOAD_VARIABLE_FROM_HASHMAP");
     }
 
-    Object key = operandStack.pop();
-    Object mapName = operandStack.pop();
+    Object key = this.operandStack.pop();
+    Object mapName = this.operandStack.pop();
 
     Object map = getInScope((String) mapName);
 
     if (map instanceof HashMap && ((HashMap<?, ?>) map).containsKey(key)) {
       Object value = ((HashMap<?, ?>) map).get(key);
-      operandStack.push(value);
+      this.operandStack.push(value);
     } else {
       throw new IllegalArgumentException("Invalid HashMap or key for LOAD_VARIABLE_FROM_HASHMAP");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeStoreVariableIntoHashMap() {
-    if (operandStack.size() < 3) {
+    if (this.operandStack.size() < 3) {
       throw new IllegalStateException(
           "Not enough operands on the stack for STORE_VARIABLE_INTO_HASHMAP");
     }
 
-    Object value = operandStack.pop();
-    Object key = operandStack.pop();
-    Object mapName = operandStack.pop();
+    Object value = this.operandStack.pop();
+    Object key = this.operandStack.pop();
+    Object mapName = this.operandStack.pop();
 
     Object map = getInScope((String) mapName);
 
@@ -666,18 +666,18 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid HashMap for STORE_VARIABLE_IN_HASHMAP");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeStoreVariableIntoArray() {
-    if (operandStack.size() < 3) {
+    if (this.operandStack.size() < 3) {
       throw new IllegalStateException(
           "Not enough operands on the stack for STORE_VARIABLE_INTO_ARRAY");
     }
 
-    Object value = operandStack.pop();
-    int index = (int) operandStack.pop();
-    Object arrayName = operandStack.pop();
+    Object value = this.operandStack.pop();
+    int index = (int) this.operandStack.pop();
+    Object arrayName = this.operandStack.pop();
 
     Object array = getInScope((String) arrayName);
 
@@ -687,51 +687,51 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid array or index for STORE_VARIABLE_IN_ARRAY");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeLoadFunction() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for LOAD_FUNCTION");
     }
 
-    String functionName = (String) operandStack.pop();
-    List<String> functionParams = (List<String>) operandStack.pop();
+    String functionName = (String) this.operandStack.pop();
+    List<String> functionParams = (List<String>) this.operandStack.pop();
 
-    globalScope.put(functionName, programCounter);
-    globalScope.put(functionName + "_params", functionParams);
+    this.globalScope.put(functionName, this.programCounter);
+    this.globalScope.put(functionName + "_params", functionParams);
 
-    programCounter++;
+    this.programCounter++;
   }
 
   private void executeCallFunction() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Invalid state for CALL_FUNCTION");
     }
 
-    String functionName = (String) operandStack.pop();
+    String functionName = (String) this.operandStack.pop();
 
-    int functionAddress = globalScope.get(functionName);
-    List<String> functionParams = globalScope.get(functionName + "_params");
+    int functionAddress = this.globalScope.get(functionName);
+    List<String> functionParams = this.globalScope.get(functionName + "_params");
 
     int scopeId = newFrame();
 
     for (int i = 0; i <= functionParams.size(); i++) {
       String argumentId = functionParams[i];
-      Object argument = operandStack.pop();
+      Object argument = this.operandStack.pop();
 
-      operandStack.push(argument);
-      operandStack.push(argumentId);
+      this.operandStack.push(argument);
+      this.operandStack.push(argumentId);
 
       executeStoreVariable();
     }
 
-    int varArgNum = (int) operandStack.pop();
+    int varArgNum = (int) this.operandStack.pop();
 
     if (varArgNum > 0) {
-      varArgs.clear();
+      this.varArgs.clear();
       while (--varArgNum) {
-        varArgs.add(operandstack.pop());
+        this.varArgs.add(operandstack.pop());
       }
     }
 
@@ -748,7 +748,7 @@ public class XtellaVM {
       if (runImmediately) {
         t.start();
       } else {
-        globalScope.put(threadIdentifier, t);
+        this.globalScope.put(threadIdentifier, t);
       }
     } else {
       executeVM(functionAddress);
@@ -758,56 +758,56 @@ public class XtellaVM {
   }
 
   private void executeGetVarArg() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands for GET_VARARG");
     }
 
-    int varArgIndex = (int) operandStack.pop();
+    int varArgIndex = (int) this.operandStack.pop();
 
-    if (varArgIndex >= varArgs.size()) {
+    if (varArgIndex >= this.varArgs.size()) {
       throw new IllegalStateException("Number of requested variable argument is illegal");
     }
 
-    operandStack.push(varArg.get(varArgIndex));
+    this.operandStack.push(varArg.get(varArgIndex));
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeRegexMatch() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for REGEX_MATCH");
     }
 
-    Object operand1 = operandStack.pop();
-    Object operand2 = operandStack.pop();
+    Object operand1 = this.operandStack.pop();
+    Object operand2 = this.operandStack.pop();
 
     if (operand1 instanceof String && operand2 instanceof String) {
       String input = (String) operand1;
       String pattern = (String) operand2;
 
       boolean result = input.matches(pattern);
-      operandStack.push(result);
+      this.operandStack.push(result);
     } else {
       throw new IllegalArgumentException("Invalid operand types for REGEX_MATCH");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeExecCommand() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for EXEC_COMMAND");
     }
 
-    Object command = operandStack.pop();
+    Object command = this.operandStack.pop();
 
     if (command instanceof String) {
       String commandString = (String) command;
 
       try {
         Process process = Runtime.getRuntime().exec(commandString);
-        lastExitCode = process.waitFor();
-        operandStack.push(lastExitCode);
+        this.lastExitCode = process.waitFor();
+        this.operandStack.push(this.lastExitCode);
       } catch (IOException | InterruptedException e) {
         throw new RuntimeException("Error executing command: " + commandString, e);
       }
@@ -815,55 +815,55 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand type for EXEC_COMMAND");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeMakeVariant() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateExeception("Not enough operands on the stack for MAKE_VARIANT");
     }
 
     List<String> params = new List<>();
 
-    String varianetName = (String) operandStack.pop();
-    int numParams = (int) operandStack.pop();
+    String varianetName = (String) this.operandStack.pop();
+    int numParams = (int) this.operandStack.pop();
 
     while (numParams--) {
-      String paramName = operandStack.pop();
+      String paramName = this.operandStack.pop();
       params.add(paramName);
     }
 
-    globalScope.put(variantName, params);
+    this.globalScope.put(variantName, params);
 
-    programCounter++;
+    this.programCounter++;
   }
 
   private void executeRunThread() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for RUN_THREAD");
     }
 
     String threadIdentifier = (String) stack.pop();
 
-    Thread t = (Thread) globalScope.get(threadIdentifier);
+    Thread t = (Thread) this.globalScope.get(threadIdentifier);
 
     t.start();
     t.join();
   }
 
   private void executeOpenFileForReading() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for OPEN_FILE");
     }
 
-    Object filenameObject = operandStack.pop();
+    Object filenameObject = this.operandStack.pop();
 
     if (filenameObject instanceof String) {
       String filename = (String) filenameObject;
 
       try {
         FileReader fileReader = new FileReader(new File(filename));
-        operandStack.push(fileReader);
+        this.operandStack.push(fileReader);
       } catch (FileNotFoundException e) {
         throw new RuntimeException("Error opening file: " + filename, e);
       }
@@ -871,22 +871,22 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand type for OPEN_FILE");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeOpenFileForWriting() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for OPEN_FILE");
     }
 
-    Object filenameObject = operandStack.pop();
+    Object filenameObject = this.operandStack.pop();
 
     if (filenameObject instanceof String) {
       String filename = (String) filenameObject;
 
       try {
         FileWriter fileWriter = new FileWriter(new File(filename));
-        operandStack.push(fileWriter);
+        this.operandStack.push(fileWriter);
       } catch (FileNotFoundException e) {
         throw new RuntimeException("Error opening file: " + filename, e);
       }
@@ -894,16 +894,16 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand type for OPEN_FILE");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeOpenFileForReadingAndWriting() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException(
           "Not enough operands on the stack for OPEN_FILE_FOR_READING_AND_WRITING");
     }
 
-    Object filePathObject = operandStack.pop();
+    Object filePathObject = this.operandStack.pop();
 
     if (filePathObject instanceof String) {
       String filePath = (String) filePathObject;
@@ -911,7 +911,7 @@ public class XtellaVM {
 
       try {
         RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
-        operandStack.push(randomAccessFile);
+        this.operandStack.push(randomAccessFile);
       } catch (FileNotFoundException e) {
         throw new RuntimeException("File not found: " + filePath, e);
       } catch (IOException e) {
@@ -922,15 +922,15 @@ public class XtellaVM {
           "Invalid operand type for OPEN_FILE_FOR_READING_AND_WRITING");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeCloseFile() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for CLOSE_FILE");
     }
 
-    Object fileObject = operandStack.pop();
+    Object fileObject = this.operandStack.pop();
 
     if (fileObject instanceof Closeable) {
       Closeable fileToClose = (Closeable) fileObject;
@@ -946,11 +946,11 @@ public class XtellaVM {
   }
 
   private void executeReadFileForReading() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for READ_FILE");
     }
 
-    Object fileObject = operandStack.pop();
+    Object fileObject = this.operandStack.pop();
 
     if (fileObject instanceof FileReader) {
       FileReader fileReader = (FileReader) fileObject;
@@ -962,7 +962,7 @@ public class XtellaVM {
           content.append(line).append(System.lineSeparator());
         }
 
-        operandStack.push(content.toString().trim());
+        this.operandStack.push(content.toString().trim());
       } catch (IOException e) {
         throw new RuntimeException("Error reading file", e);
       }
@@ -970,21 +970,21 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand type for READ_FILE");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeReadLineFromFile() {
-    if (operandStack.size() < 1) {
+    if (this.operandStack.size() < 1) {
       throw new IllegalStateException("Not enough operands on the stack for READ_LINE_FROM_FILE");
     }
 
-    Object fileObject = operandStack.pop();
+    Object fileObject = this.operandStack.pop();
 
     if (fileObject instanceof FileReader || fileObject instanceof RandomAccessFile) {
       FileReader fileReader = (FileReader) fileObject;
       try (BufferedReader reader = new BufferedReader(fileReader)) {
         String line = reader.readLine();
-        operandStack.push(line != null ? line : "");
+        this.operandStack.push(line != null ? line : "");
       } catch (IOException e) {
         throw new RuntimeException("Error reading line from file", e);
       }
@@ -992,16 +992,16 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand type for READ_LINE_FROM_FILE");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeWriteFile() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for WRITE_FILE");
     }
 
-    Object fileObject = operandStack.pop();
-    Object contentObject = operandStack.pop();
+    Object fileObject = this.operandStack.pop();
+    Object contentObject = this.operandStack.pop();
 
     if ((fileObject instanceof FileWriter || fileObject instanceof RandomAccessFile)
         && contentObject instanceof String) {
@@ -1016,16 +1016,16 @@ public class XtellaVM {
       throw new IllegalArgumentException("Invalid operand types for WRITE_FILE");
     }
 
-    framePointer++;
+    this.framePointer++;
   }
 
   private void executeAppendFile() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for APPEND_FILE");
     }
 
-    Object fileObject = operandStack.pop();
-    Object contentObject = operandStack.pop();
+    Object fileObject = this.operandStack.pop();
+    Object contentObject = this.operandStack.pop();
 
     if ((fileObject instanceof FileWriter || fileObject instanceof RandomAccessFile)
         && contentObject instanceof String) {
@@ -1042,17 +1042,17 @@ public class XtellaVM {
   }
 
   private void executeSwapValue() {
-    if (operandStack.size() < 2) {
+    if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for SWAP_VALUE");
     }
 
-    Object swapped = operandStack.pop();
-    Object swappee = operandStack.pop();
+    Object swapped = this.operandStack.pop();
+    Object swappee = this.operandStack.pop();
 
     stack.push(swappee);
     stack.push(swapped);
 
-    framePointer += 2;
+    this.framePointer += 2;
   }
 
   private void executeDuplicateValue() {
@@ -1060,11 +1060,11 @@ public class XtellaVM {
       throw new IllegalStateException("Not enough operands on the stack for DUPLICATE_VALUE");
     }
 
-    Object duplicatedValue = operandStack.pop();
+    Object duplicatedValue = this.operandStack.pop();
     stack.push(duplicatedValue);
 
-    framePointer++;
+    this.framePointer++;
   }
 
-  public static void executeVM(int programCounter) {}
+  public static void executeVM(int this.programCounter) {}
 }
