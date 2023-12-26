@@ -1,9 +1,67 @@
-%token IDENTIFIER LET PRINT READ WRITE APPEND DOUBLE_GT LT DOUBLE_LT OPEN WRITING APPENDING READ_AND_WRITE LPAREN PLUS MINUS NOT BIT_NOT DOLLAR SCI_NUM BIN_NUM_PREFIX HEX_NUM_PREFIX OCT_NUM_PREFIX GT LBRACE PERCENT LSQUARE M_LT M_LBRACE M_LPAREN M_PERCENT M_LSQUARE NEWLINE RPAREN RBRACE RSQUARE Q_LT Q_LPAREN Q_LBRACE Q_PERCENT Q_LSQUARE DQUOTE QUESTION BACKSLASH LOWERCASE_A LOWERCASE_B LOWERCASE_F LOWERCASE_N LOWERCASE_R LOWERCASE_T LOWERCASE_V DQUOTE SQUOTE BACKTICK Q_SLASH M_SLASH SLASH OCT_NUM HEX_NUM BIN_NUM REG_MATCHES REG_NOT_MATCHES COLON MUTIPLY GTE LTE BIT_XOR BIT_AND UNDERLINE ARROW WITH SEMICOLON ELSE DO READING AS FOR FILEHANDLE EQUALS BECOMES QMARK POW MODULO MULTIPLY DIVIDE NEQ EQ BIT_XOR BIT_AND BIT_OR AND OR UNLESS PIPE COMMA REG_MATCHES REG_NOT_MATCHES RETURN IN WHILE END CLOSE IF INTO EXEC LBRACK RBRACK DEFUN FLOAT_NUM M_LBRACK Q_LBRACK Q_LBRACE LETTER BACKSLASH U_PLUS LOWERCASE_X BACKSLASH_U_PLUS BACKSLASH_X DECIMAL_NUM
+%token IDENTIFIER LET FILEHANDLE
+%token EQUALS BECOMES
+%token PERCENT DOLLAR SQUOTE DQUOTE BACKTICK PIPE SLASH NEWLINE LETTER
+%token OCT_NUM HEX_NUM BIN_NUM
+%token BIT_XOR BIT_AND BIT_NOT BIT_OR UNDERLINE U_PLUS U_MINUS NEG
+%token ARROW WITH IN MATCH 
+%token READ WRITE INTO FROM
+%token READING WRITING APPENDING READ_AND_WRITE
+%token APPEND DOUBLE_GT LT DOUBLE_LT
+%token OPEN CLOSE PRINT EXEC AS
+%token ELSE DO END FOR IF WHILE RETURN UNLESS DEFUN 
+%token LPAREN RPAREN
+%token LCURLY RCURLY
+%token OR AND
+%token EQ NEQ
+%token LT LTE GT GTE
+%token PLUS MINUS
+%token MULTIPLY DIVIDE MODULO POW
+%token FLOAT_NUM SCI_NUM
+%token BIN_NUM_PREFIX HEX_NUM_PREFIX OCT_NUM_PREFIX DECIMAL_NUM
+%token REGEX_MATCH REGEX_NOT_MATCH
+%token COMMA
+%token QMARK COLON
+%token Q_LT Q_LPAREN Q_LCURLY Q_PERCENT Q_LBRACK
+%token M_LT M_LCURLY M_LPAREN M_PERCENT M_LBRACK
+%token C_ESCAPES UNICODE_ESCAPES HEX_ESCAPES OCT_ESCAPES
 
+%left OR
+%left AND
+%left BIT_OR
+%left BIT_XOR
+%left BIT_AND
+%left EQ NEQ LT LTE GT GTE
+%left PLUS MINUS
+%left MULTIPLY DIVIDE MODULO
+%left POW
+%left QMARK COLON
+%right U_PLUS U_MINUS NEG BIT_NOT DOLLAR
+%left INDEX
+%right SLASH_
+%left M_SLASH M_LT M_LCURLY M_LPAREN M_PERCENT M_LBRACK
+%left Q_SLASH Q_LT Q_LCURLY Q_LPAREN Q_PERCENT Q_LBRACK
+
+%nonassoc REG_MATCHES REG_NOT_MATCHES
+%nonassoc ELSE
+%nonassoc DO
+%nonassoc SEMICOLON
+%nonassoc COMMA
+%nonassoc ARROW
+%nonassoc RETURN
+%nonassoc MATCH
+%nonassoc UNLESS
+%nonassoc FOR
+%nonassoc WHILE
+%nonassoc IF
+%nonassoc LBRACK RBRACK
+%nonassoc LBRACE RBRACE
+%nonassoc LPAREN RPAREN
+%nonassoc LCURLY RCURLY
+
+%start program
 
 
 %%
-
 
 program           : statement_list
 		  ;
@@ -100,11 +158,15 @@ identifier_list   : /* empty */
 		   | identifier_list COMMA IDENTIFIER
 		   ;
 
-block             : LBRACE statement_list RBRACE
+block             : LCURLY statement_list RCURLY
 		   ;
 
 
-expression       : compound_expr | UNDERLINE | regex_match | regex_nonmatch
+expression       : compound_expr 
+		  | UNDERLINE 
+		  | regex_match 
+		  | regex_nonmatch 
+		  | ternary_expr
 		  ;
 
 compound_expr    : primary_expr
@@ -130,9 +192,9 @@ compound_expr    : primary_expr
 	  	  ;
 
 unary_expr        : primary_expr
-                   | PLUS unary_expr
-                   | MINUS unary_expr
-                   | NOT unary_expr
+                   | U_PLUS unary_expr
+                   | U_MINUS unary_expr
+                   | NEG unary_expr
                    | BIT_NOT unary_expr
                    | DOLLAR unary_expr
 		   ;
@@ -141,7 +203,6 @@ primary_expr      : IDENTIFIER
 		   | IDENTIFIER LBRACK expression RBRACK
 		   | const_value
                    | function_call
-                   | ternary_expr
                    | lambda_expr
                    | argument_back_ref
 		   ;
@@ -154,7 +215,7 @@ function_call     : IDENTIFIER LPAREN argument_list RPAREN
 ternary_expr      : expression QMARK expression COLON expression
 		   ;
 
-lambda_expr       : LPAREN argument_list RPAREN ARROW LBRACE statement_list RBRACE
+lambda_expr       : LPAREN argument_list RPAREN ARROW LCURLY statement_list RCURLY
 		   ;
 
 argument_list     : expression
@@ -171,14 +232,14 @@ regex_nonmatch   : expression REG_NOT_MATCHES regex_const
 const_value      : array | hashmap | number | string_const
 		  ;
 
-array            : LBRACE array_elements RBRACE
+array            : LCURLY array_elements RCURLY
 		  ;
 
 array_elements    : expression
                   | array_elements COMMA expression
 		   ;
 
-hashmap          : LBRACE key_values RBRACE
+hashmap          : LCURLY key_values RCURLY
 		  ;
 
 key_values        : expression COLON expression
@@ -219,7 +280,7 @@ regex_body       : /* empty */
 
 regex_closer     : SLASH
 		  | GT
-		  | LBRACE
+		  | LCURLY
 		  | LPAREN
 		  | PERCENT
 		  | LBRACK
@@ -227,7 +288,7 @@ regex_closer     : SLASH
 
 regex_opener     : M_SLASH
 		  | M_LT
-		  | M_LBRACE
+		  | M_LCURLY
 		  | M_LPAREN
 		  | M_PERCENT
 		  | M_LBRACK
@@ -245,15 +306,15 @@ multi_ln_quoted_str_body  : character
 quote_closers    : SLASH        
                   | GT		
                   | RPAREN      
-                  | RBRACE	
+                  | RCURLY	
                   | PERCENT	
-                  | RSQUARE	
+                  | RBRACK	
 		  ;
 
 quote_openers    : Q_SLASH      
                   | Q_LT	
                   | Q_LPAREN    
-                  | Q_LBRACE	
+                  | Q_LCURLY	
                   | Q_PERCENT   
                   | Q_LBRACK	
 		  ;
@@ -283,32 +344,10 @@ string_body      : character
 		  ;
 
 character        : LETTER				
-                  | c_escapes				
-		  ;
-
-c_escapes        : SQUOTE				
-                  | DQUOTE				
-                  | QUESTION				
-                  | BACKSLASH				
-                  | LOWERCASE_A				
-                  | LOWERCASE_B				
-                  | LOWERCASE_F				
-                  | LOWERCASE_N				
-                  | LOWERCASE_R				
-                  | LOWERCASE_T				
-                  | LOWERCASE_V				
-                  | uni_escape				
-		  | hex_escape				
-                  | oct_escape				
-		  ;
-
-uni_escape	 : BACKSLASH_U_PLUS HEX_NUM		
-	    	  ;
-
-hex_escape       : BACKSLASH_LOWERCASE_X HEX_NUM	
-		  ;
-
-oct_escape       : BACKSLASH OCT_NUM			
+                  | C_ESCAPES
+		  | UNICODE_ESCAPES
+		  | HEX_ESCAPES
+		  | OCT_ESCAPES
 		  ;
 
 
