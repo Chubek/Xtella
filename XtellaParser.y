@@ -1,3 +1,10 @@
+%token IDENTIFIER LET PRINT READ WRITE APPEND DOUBLE_GT LT DOUBLE_LT OPEN WRITING APPENDING READ_AND_WRITE LPAREN PLUS MINUS NOT BIT_NOT DOLLAR SCI_NUM BIN_NUM_PREFIX HEX_NUM_PREFIX OCT_NUM_PREFIX GT LBRACE PERCENT LSQUARE M_LT M_LBRACE M_LPAREN M_PERCENT M_LSQUARE NEWLINE RPAREN RBRACE RSQUARE Q_LT Q_LPAREN Q_LBRACE Q_PERCENT Q_LSQUARE DQUOTE QUESTION BACKSLASH LOWERCASE_A LOWERCASE_B LOWERCASE_F LOWERCASE_N LOWERCASE_R LOWERCASE_T LOWERCASE_V DQUOTE SQUOTE BACKTICK Q_SLASH M_SLASH SLASH OCT_NUM HEX_NUM BIN_NUM REG_MATCHES REG_NOT_MATCHES COLON MUTIPLY GTE LTE BIT_XOR BIT_AND UNDERLINE ARROW WITH SEMICOLON ELSE DO READING AS FOR FILEHANDLE EQUALS BECOMES QMARK POW MODULO MULTIPLY DIVIDE NEQ EQ BIT_XOR BIT_AND BIT_OR AND OR UNLESS PIPE COMMA REG_MATCHES REG_NOT_MATCHES RETURN IN WHILE END CLOSE IF INTO EXEC LBRACK RBRACK DEFUN FLOAT_NUM M_LBRACK Q_LBRACK Q_LBRACE LETTER BACKSLASH U_PLUS LOWERCASE_X BACKSLASH_U_PLUS BACKSLASH_X
+
+
+
+%%
+
+
 program           : statement_list
 		  ;
 
@@ -8,7 +15,7 @@ statement_list    : statement
 statement         : assign_stmt
                    | control_flow_stmt
                    | function_stmt
-                   | file_stmt
+                   | rw_stmt
 		   | io_stmt
 		   | exec_stmt
 		   | open_stmt
@@ -86,6 +93,13 @@ match_case        : PIPE expression ARROW block COMMA
 unless_stmt       : UNLESS LPAREN condition RPAREN DO block END
 		   ;
 
+function_stmt     : DEFUN IDENTIFIER LPAREN identifier_list LPAREN block
+
+identifier_list   : /* empty */
+		   | IDENTIFIER
+		   | identifier_list COMMA IDENTIFIER
+		   ;
+
 block             : LBRACE statement_list RBRACE
 		   ;
 
@@ -132,7 +146,15 @@ primary_expr      : IDENTIFIER
                    | argument_back_ref
 		   ;
 
+argument_back_ref : DOLLAR DECIMAL_NUM
+
 function_call     : IDENTIFIER LPAREN argument_list RPAREN
+		   ;
+
+ternary_expr      : expression QMARK expression COLON expression
+		   ;
+
+lambda_expr       : LPAREN argument_list RPAREN ARROW LBRACE statement_list RBRACE
 		   ;
 
 argument_list     : expression
@@ -145,9 +167,8 @@ regex_nonmatch   : expression REG_NOT_MATCHES regex_const
 		  ;
 
 
-		  ;
 
-const_value      : array | hashmap | exec_command | number | string_consst
+const_value      : array | hashmap | number | string_const
 		  ;
 
 array            : LBRACE array_elements RBRACE
@@ -183,7 +204,7 @@ integer          : DECIMAL_NUM
 		  ;
                   
 string_const     : multi_ln_quoted_string
-		  | multi_ln_strng
+		  | multi_ln_string
 		  | quoted_string
 		  | string
 		  ;
@@ -201,7 +222,7 @@ regex_closer     : SLASH
 		  | LBRACE
 		  | LPAREN
 		  | PERCENT
-		  | LSQUARE
+		  | LBRACK
 		  ;
 
 regex_opener     : M_SLASH
@@ -209,7 +230,7 @@ regex_opener     : M_SLASH
 		  | M_LBRACE
 		  | M_LPAREN
 		  | M_PERCENT
-		  | M_LSQUARE
+		  | M_LBRACK
 		  ;
 
 multi_ln_quoted_string : quote_openers multi_ln_quoted_str_body quote_closers
@@ -234,7 +255,7 @@ quote_openers    : Q_SLASH
                   | Q_LPAREN    
                   | Q_LBRACE	
                   | Q_PERCENT   
-                  | Q_LSQUARE	
+                  | Q_LBRACK	
 		  ;
 
 multi_ln_string  : BACKTICK multi_ln_string_body BACKTICK	   
@@ -281,10 +302,10 @@ c_escapes        : SQUOTE
                   | oct_escape				
 		  ;
 
-uni_escape	 : BACKSLACK UPLUS HEX_NUM		
+uni_escape	 : BACKSLASH_U_PLUS HEX_NUM		
 	    	  ;
 
-hex_escape       : BACKSLASH LOWERCASE_X HEX_NUM	
+hex_escape       : BACKSLASH_LOWERCASE_X HEX_NUM	
 		  ;
 
 oct_escape       : BACKSLASH OCT_NUM			
