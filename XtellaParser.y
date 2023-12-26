@@ -1,18 +1,20 @@
 %token IDENTIFIER LET FILEHANDLE
 %token EQUALS BECOMES
-%token PERCENT DOLLAR SQUOTE DQUOTE BACKTICK PIPE SLASH NEWLINE LETTER
+%token PERCENT DOLLAR SQUOTE DQUOTE BACKTICK PIPE SLASH NEWLINE LETTER DOLLAR_LCURLY TRIPLE_QUOTE
+%token CHARSEQ_WITH_NEWLINE CHARSEQ_WITHOUT_NEWLINE
 %token OCT_NUM HEX_NUM BIN_NUM
 %token BIT_XOR BIT_AND BIT_NOT BIT_OR UNDERLINE U_PLUS U_MINUS NEG
 %token ARROW WITH IN MATCH 
 %token READ WRITE INTO FROM
 %token READING WRITING APPENDING READ_AND_WRITE
-%token APPEND DOUBLE_GT LT DOUBLE_LT
+%token APPEND DOUBLE_GT DOUBLE_LT
 %token OPEN CLOSE PRINT EXEC AS
 %token ELSE DO END FOR IF WHILE RETURN UNLESS DEFUN 
 %token LPAREN RPAREN
 %token LCURLY RCURLY
 %token OR AND
 %token EQ NEQ
+%token PIPES_LEFT PIPES_RIGHT
 %token LT LTE GT GTE
 %token PLUS MINUS
 %token MULTIPLY DIVIDE MODULO POW
@@ -35,6 +37,8 @@
 %left MULTIPLY DIVIDE MODULO
 %left POW
 %left QMARK COLON
+%left PIPES_LEFT
+%right PIPES_RIGHT
 %right U_PLUS U_MINUS NEG BIT_NOT DOLLAR
 %left INDEX
 %right SLASH_
@@ -74,7 +78,6 @@ statement         : assign_stmt
                    | control_flow_stmt
                    | function_stmt
                    | rw_stmt
-		   | io_stmt
 		   | exec_stmt
 		   | open_stmt
 		   | close_stmt
@@ -86,6 +89,7 @@ assign_stmt       : IDENTIFIER BECOMES expression
 		   | LET IDENTIFIER EQUALS expression
 		   ;
 
+
 control_flow_stmt : if_stmt
                    | while_stmt
                    | for_stmt
@@ -94,23 +98,13 @@ control_flow_stmt : if_stmt
                    | unless_stmt
 		   ;
 
-exec_stmt         : EXEC DOUBLE_LT string_body DOUBLE_GT
-		   ;
-
-io_stmt           : PRINT argument_list
-		   | PRINT argument_list redirection
+exec_stmt         : EXEC DOUBLE_LT CHARSEQ_WITH_NEWLINE DOUBLE_GT
 		   ;
 
 rw_stmt           : READ FILEHANDLE INTO IDENTIFIER
 		   | READ string_const INTO IDENTIFIER
 		   | WRITE expression FILEHANDLE FILEHANDLE
 		   | APPEND expression INTO FILEHANDLE
-		   ;
-
-redirection       : GT expression
-		   | DOUBLE_GT expression
-		   | LT expression
-		   | DOUBLE_LT expression
 		   ;
 
 close_stmt        : CLOSE FILEHANDLE
@@ -169,26 +163,27 @@ expression       : compound_expr
 		  | ternary_expr
 		  ;
 
-compound_expr    : primary_expr
-		  | unary_expr
+compound_expr    : unary_expr
 		  | LPAREN compound_expr RPAREN
-                  | primary_expr OR compound_expr
-                  | primary_expr AND compound_expr
-		  | primary_expr BIT_AND compound_expr
-		  | primary_expr BIT_OR compound_expr
-		  | primary_expr BIT_XOR compound_expr
-	          | primary_expr EQ  compound_expr
-                  | primary_expr NEQ compound_expr
-                  | primary_expr LT compound_expr
-                  | primary_expr LTE compound_expr
-                  | primary_expr GT compound_expr
-                  | primary_expr GTE compound_expr
-                  | primary_expr PLUS compound_expr
-                  | primary_expr MINUS compound_expr
-                  | primary_expr MULTIPLY compound_expr
-                  | primary_expr DIVIDE compound_expr
-                  | primary_expr MODULO compound_expr
-		  | primary_expr POW compound_expr
+                  | unary_expr OR compound_expr
+                  | unary_expr AND compound_expr
+		  | unary_expr BIT_AND compound_expr
+		  | unary_expr BIT_OR compound_expr
+		  | unary_expr BIT_XOR compound_expr
+	          | unary_expr EQ  compound_expr
+                  | unary_expr NEQ compound_expr
+                  | unary_expr LT compound_expr
+                  | unary_expr LTE compound_expr
+                  | unary_expr GT compound_expr
+                  | unary_expr GTE compound_expr
+                  | unary_expr PLUS compound_expr
+                  | unary_expr MINUS compound_expr
+                  | unary_expr MULTIPLY compound_expr
+                  | unary_expr DIVIDE compound_expr
+                  | unary_expr MODULO compound_expr
+		  | unary_expr POW compound_expr
+		  | unary_expr PIPES_LEFT compound_expr
+		  | unary_expr PIPES_RIGHT compound_expr
 	  	  ;
 
 unary_expr        : primary_expr
@@ -204,10 +199,8 @@ primary_expr      : IDENTIFIER
 		   | const_value
                    | function_call
                    | lambda_expr
-                   | argument_back_ref
 		   ;
 
-argument_back_ref : DOLLAR DECIMAL_NUM
 
 function_call     : IDENTIFIER LPAREN argument_list RPAREN
 		   ;
@@ -215,7 +208,7 @@ function_call     : IDENTIFIER LPAREN argument_list RPAREN
 ternary_expr      : expression QMARK expression COLON expression
 		   ;
 
-lambda_expr       : LPAREN argument_list RPAREN ARROW LCURLY statement_list RCURLY
+lambda_expr       : LBRACK argument_list RBRACK ARROW block SEMICOLON
 		   ;
 
 argument_list     : expression
@@ -226,8 +219,6 @@ regex_match      : expression REG_MATCHES regex_const
 		  ;
 regex_nonmatch   : expression REG_NOT_MATCHES regex_const
 		  ;
-
-
 
 const_value      : array | hashmap | number | string_const
 		  ;
@@ -264,18 +255,13 @@ integer          : DECIMAL_NUM
 		  | OCT_NUM_PREFIX OCT_NUM	
 		  ;
                   
-string_const     : multi_ln_quoted_string
-		  | multi_ln_string
-		  | quoted_string
-		  | string
+string_const     : mln_qstring
+		  | mln_fstring
+		  | qstring
+		  | fstring
 		  ;
 
-regex_const      : regex_opener regex_body regex_closer
-		  ;
-
-regex_body       : /* empty */
-		  | character
-		  | regex_body character
+regex_const      : regex_opener CHARSEQ_WITHOUT_NEWLINE regex_closer
 		  ;
 
 regex_closer     : SLASH
@@ -294,13 +280,15 @@ regex_opener     : M_SLASH
 		  | M_LBRACK
 		  ;
 
-multi_ln_quoted_string : quote_openers multi_ln_quoted_str_body quote_closers
-		       ;
+mln_fstring       : TRIPLE_QUOTE mln_fstring_body TRIPLE_QUOTE
+		   ;
 
-multi_ln_quoted_str_body  : character		      
-		           | NEWLINE			      
-		           | quoted_str_body character
-		           ;
+mln_fstring_body  : CHARSEQ_WITH_NEWLINE
+		   | DOLLAR_LCURLY expression RCURLY
+		   ;
+
+mln_qstring       : quote_openers CHARSEQ_WITH_NEWLINE quote_closers
+		   ;
 
 
 quote_closers    : SLASH        
@@ -319,35 +307,12 @@ quote_openers    : Q_SLASH
                   | Q_LBRACK	
 		  ;
 
-multi_ln_string  : BACKTICK multi_ln_string_body BACKTICK	   
+fstring          : DQUOTE fstring_body DQUOTE
 		  ;
 
-multi_ln_string_body : character				   
-		  | NEWLINE					   
-                  | multi_ln_string_body character		   
-                  | multi_ln_string_body DOLLAR expression RPAREN  
+fstring_body     : CHARSEQ_WITHOUT_NEWLINE
+		  | DOLLAR_LCURLY expression RCURLY
 		  ;
 
-quoted_string    : SQUOTE quoted_str_body SQUOTE	  
-		  ;
-
-quoted_str_body  : character				  
-		  | quoted_str_body character		  
-		  ;
-
-string           : DQUOTE string_body DQUOTE		  
-		  ;
-
-string_body      : character				  
-                  | string_body character		  
-                  | string_body DOLLAR expression RPAREN  
-		  ;
-
-character        : LETTER				
-                  | C_ESCAPES
-		  | UNICODE_ESCAPES
-		  | HEX_ESCAPES
-		  | OCT_ESCAPES
-		  ;
-
-
+qstring         : SQUOTE CHARSEQ_WITHOUT_NEWLINE SQUOTE
+                 ;
