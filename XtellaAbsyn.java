@@ -43,38 +43,6 @@ class ControlFlowStmtNode extends StatementNode {
   }
 }
 
-class FunctionStmtNode extends StatementNode {
-  private String functionName;
-  private List<ExpressionNode> arguments;
-
-  public FunctionStmtNode(String functionName, List<ExpressionNode> arguments) {
-    this.functionName = functionName;
-    this.arguments = arguments;
-  }
-}
-
-class FileStmtNode extends StatementNode {
-  private String fileName;
-  private RWMode rwMode;
-  private FileHandleNode fileHandle;
-
-  public FileStmtNode(String fileName, RWMode rwMode, FileHandleNode fileHandle) {
-    this.fileName = fileName;
-    this.rwMode = rwMode;
-    this.fileHandle = fileHandle;
-  }
-}
-
-class IOStmtNode extends StatementNode {
-  private List<ExpressionNode> arguments;
-  private RedirectionNode redirection;
-
-  public IOStmtNode(List<ExpressionNode> arguments, RedirectionNode redirection) {
-    this.arguments = arguments;
-    this.redirection = redirection;
-  }
-}
-
 class ExecStmtNode extends StatementNode {
   private String command;
 
@@ -83,60 +51,35 @@ class ExecStmtNode extends StatementNode {
   }
 }
 
-class OpenStmtNode extends StatementNode {
-  private String fileName;
+class RWStmtNode extends StatementNode {
   private RWMode rwMode;
-  private FileHandleNode fileHandle;
+  private ExpressionNode expression;
+  private String fileHandle;
 
-  public OpenStmtNode(String fileName, RWMode rwMode, FileHandleNode fileHandle) {
-    this.fileName = fileName;
+  public RWStmtNode(RWMode rwMode, ExpressionNode expression, String fileHandle) {
     this.rwMode = rwMode;
+    this.expression = expression;
     this.fileHandle = fileHandle;
   }
 }
 
 class CloseStmtNode extends StatementNode {
-  private FileHandleNode fileHandle;
+  private String fileHandle;
 
-  public CloseStmtNode(FileHandleNode fileHandle) {
+  public CloseStmtNode(String fileHandle) {
     this.fileHandle = fileHandle;
   }
 }
 
-class RWStmtNode extends StatementNode {
-
-  enum RWMode {
-    READING,
-    WRITING,
-    APPENDING,
-    READ_AND_WRITE
-  }
-
+class OpenStmtNode extends StatementNode {
+  private String fileName;
   private RWMode rwMode;
-  private ExpressionNode expression;
-  private FileHandleNode fileHandle;
+  private String fileHandle;
 
-  public RWStmtNode(RWMode rwMode, ExpressionNode expression, FileHandleNode fileHandle) {
+  public OpenStmtNode(String fileName, RWMode rwMode, String fileHandle) {
+    this.fileName = fileName;
     this.rwMode = rwMode;
-    this.expression = expression;
     this.fileHandle = fileHandle;
-  }
-}
-
-class RedirectionNode extends Node {
-  enum RedirectionType {
-    GT,
-    DOUBLE_GT,
-    LT,
-    DOUBLE_LT
-  }
-
-  private RedirectionType redirectionType;
-  private ExpressionNode expression;
-
-  public RedirectionNode(RedirectionType redirectionType, ExpressionNode expression) {
-    this.redirectionType = redirectionType;
-    this.expression = expression;
   }
 }
 
@@ -212,12 +155,12 @@ class BlockNode extends AbsynNode {
 
 abstract class ExpressionNode extends AbsynNode {}
 
-class BinaryExprNode extends ExpressionNode {
+class CompoundExprNode extends ExpressionNode {
   private ExpressionNode left;
   private ExpressionNode right;
   private String operator;
 
-  public BinaryExprNode(ExpressionNode left, ExpressionNode right, String operator) {
+  public CompoundExprNode(ExpressionNode left, ExpressonNode right, String operator) {
     this.left = left;
     this.right = right;
     this.operator = operator;
@@ -247,6 +190,21 @@ class LiteralNode extends ExpressionNode {
 
   public LiteralNode(Object value) {
     this.value = value;
+  }
+}
+
+enum RWMode {
+  READING,
+  WRITING,
+  APPENDING,
+  READ_AND_WRITE
+}
+
+class ConditionNode extends ExpressionNode {
+  private ExpressionNode expression;
+
+  public ConditionNode(ExpressionNode expression) {
+    this.expression = expression;
   }
 }
 
@@ -280,19 +238,7 @@ enum Operator {
   }
 }
 
-class CompoundExprNode extends ExpressionNode {
-  private ExpressionNode left;
-  private ExpressionNode right;
-  private String operator;
-
-  public CompoundExprNode(ExpressionNode left, ExpressionNode right, String operator) {
-    this.left = left;
-    this.right = right;
-    this.operator = operator;
-  }
-}
-
-public class PrimaryExprNode extends ExpressionNode {
+class PrimaryExprNode extends ExpressionNode {
   public enum PrimaryExprNodeType {
     IDENTIFIER,
     IDENTIFIER_WITH_INDEX,
@@ -305,11 +251,11 @@ public class PrimaryExprNode extends ExpressionNode {
 
   private String identifier;
   private ExpressionNode arrayIndex;
-  private ConstValueNode constValue;
+  private Object constValue;
   private FunctionCallNode functionCall;
-  private TernaryExprNode ternaryExpr;
-  private LambdaExprNode lambdaExpr;
-  private ArgumentBackRefNode argumentBackRef;
+  private Object ternaryExpr;
+  private Object lambdaExpr;
+  private Object argumentBackRef;
   private PrimaryExprNodeType nodeType;
 
   public PrimaryExprNode(String identifier) {
@@ -323,7 +269,7 @@ public class PrimaryExprNode extends ExpressionNode {
     this.arrayIndex = arrayIndex;
   }
 
-  public PrimaryExprNode(ConstValueNode constValue) {
+  public PrimaryExprNode(Object constValue) {
     this.nodeType = PrimaryExprNodeType.CONST_VALUE;
     this.constValue = constValue;
   }
@@ -333,17 +279,17 @@ public class PrimaryExprNode extends ExpressionNode {
     this.functionCall = functionCall;
   }
 
-  public PrimaryExprNode(TernaryExprNode ternaryExpr) {
+  public PrimaryExprNode(Object ternaryExpr) {
     this.nodeType = PrimaryExprNodeType.TERNARY_EXPR;
     this.ternaryExpr = ternaryExpr;
   }
 
-  public PrimaryExprNode(LambdaExprNode lambdaExpr) {
+  public PrimaryExprNode(Object lambdaExpr) {
     this.nodeType = PrimaryExprNodeType.LAMBDA_EXPR;
     this.lambdaExpr = lambdaExpr;
   }
 
-  public PrimaryExprNode(ArgumentBackRefNode argumentBackRef) {
+  public PrimaryExprNode(Object argumentBackRef) {
     this.nodeType = PrimaryExprNodeType.ARGUMENT_BACK_REF;
     this.argumentBackRef = argumentBackRef;
   }
@@ -360,7 +306,7 @@ public class PrimaryExprNode extends ExpressionNode {
     return arrayIndex;
   }
 
-  public ConstValueNode getConstValue() {
+  public Object getConstValue() {
     return constValue;
   }
 
@@ -368,15 +314,15 @@ public class PrimaryExprNode extends ExpressionNode {
     return functionCall;
   }
 
-  public TernaryExprNode getTernaryExpr() {
+  public Object getTernaryExpr() {
     return ternaryExpr;
   }
 
-  public LambdaExprNode getLambdaExpr() {
+  public Object getLambdaExpr() {
     return lambdaExpr;
   }
 
-  public ArgumentBackRefNode getArgumentBackRef() {
+  public Object getArgumentBackRef() {
     return argumentBackRef;
   }
 }
@@ -391,7 +337,7 @@ class FunctionCallNode extends PrimaryExprNode {
   }
 }
 
-public class RegexExprNode extends ExpressionNode {
+class RegexExprNode extends ExpressionNode {
   public enum RegexMatchType {
     MATCHES,
     NOT_MATCHES
@@ -408,13 +354,14 @@ public class RegexExprNode extends ExpressionNode {
   }
 }
 
-public class ConstValueNode extends ExpressionNode {
+class ConstValueNode extends ExpressionNode {
   public enum ConstValueType {
     ARRAY,
     HASHMAP,
     EXEC_COMMAND,
     NUMBER,
-    STRING
+    STRING,
+    REGEX
   }
 
   private ConstValueType constType;
@@ -432,7 +379,7 @@ class ArrayNode extends ConstValueNode {
   }
 }
 
-public class HashMapNode extends ConstValueNode {
+class HashMapNode extends ConstValueNode {
   private HashMap<ExpressionNode, ExpressionNode> keyValues;
 
   public HashMapNode() {
@@ -449,7 +396,7 @@ public class HashMapNode extends ConstValueNode {
   }
 }
 
-public class NumberNode extends ConstValueNode {
+class NumberNode extends ConstValueNode {
   public enum NumberType {
     INTEGER,
     FLOAT,
@@ -474,7 +421,7 @@ public class NumberNode extends ConstValueNode {
   }
 }
 
-public class StringConstNode extends ConstValueNode {
+class StringConstNode extends ConstValueNode {
   private String value;
 
   public StringConstNode(String value) {
@@ -487,7 +434,7 @@ public class StringConstNode extends ConstValueNode {
   }
 }
 
-public class RegexConstNode extends ConstValueNode {
+class RegexConstNode extends ConstValueNode {
   private String pattern;
 
   public RegexConstNode(String pattern) {
