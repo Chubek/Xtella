@@ -1,3 +1,5 @@
 *.tmp
 *.temp
 XtellaParser.java
+XtellaLexer.l.java
+XtellaLexer.java
