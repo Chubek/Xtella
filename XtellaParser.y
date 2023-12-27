@@ -1,8 +1,19 @@
-%token IDENTIFIER IDENTIFIER_LBRACK LET FILEHANDLE
+%{
+  import java.io.*;
+  import java.util.*;
+%}
+
+
+%token <String> IDENTIFIER_HASHMAP IDENTIFIER_SCALAR IDENTIFIER_ARRAY IDENTIFIER_FUNCTION IDENTIFIER_VARIANT
+%token <String> IDENTIFIER_INDEXED END_INDEX
+%token <long> BIN_NUM HEX_NUM OCT_NUM DECIMAL_NUM
+%token <double> FLOAT_NUM
+%token <String> CHARSEQ_WITH_NEWLINE CHARSEQ_WITHOUT_NEWLINE
+
+%token LET FILEHANDLE
 %token EQUALS BECOMES
-%token PERCENT DOLLAR SQUOTE DQUOTE BACKTICK PIPE SLASH NEWLINE LETTER DOLLAR_LCURLY TRIPLE_QUOTE DOUBLE_COLON
-%token CHARSEQ_WITH_NEWLINE CHARSEQ_WITHOUT_NEWLINE
-%token OCT_NUM HEX_NUM BIN_NUM
+%token PERCENT DOLLAR SQUOTE DQUOTE BACKTICK 
+%token PIPE SLASH NEWLINE LETTER DOLLAR_LCURLY TRIPLE_QUOTE DOUBLE_COLON
 %token BIT_XOR BIT_AND BIT_NOT BIT_OR UNDERLINE U_PLUS U_MINUS NEG
 %token ARROW WITH IN MATCH 
 %token READ WRITE INTO FROM
@@ -19,15 +30,12 @@
 %token PLUS MINUS
 %token MULTIPLY DIVIDE MODULO POW
 %token FLOAT_NUM SCI_NUM
-%token BIN_NUM_PREFIX HEX_NUM_PREFIX OCT_NUM_PREFIX DECIMAL_NUM
+%token BIN_NUM_PREFIX HEX_NUM_PREFIX OCT_NUM_PREFIX
 %token REGEX_MATCH REGEX_NOT_MATCH
 %token COMMA
 %token QMARK COLON
 %token Q_LT Q_LPAREN Q_LCURLY Q_PERCENT Q_LBRACK
 %token M_LT M_LCURLY M_LPAREN M_PERCENT M_LBRACK
-%token C_ESCAPES UNICODE_ESCAPES HEX_ESCAPES OCT_ESCAPES
-%token IDENTIFIER_HASHMAP IDENTIFIER_SCALAR IDENTIFIER_ARRAY IDENTIFIER_FUNCTION IDENTIFIER_VARIANT
-%token IDENTIFIER_INDEXED END_INDEX
 
 %left OR
 %left AND
@@ -322,3 +330,59 @@ fstring_body     : CHARSEQ_WITHOUT_NEWLINE
 
 qstring         : SQUOTE CHARSEQ_WITHOUT_NEWLINE SQUOTE
                  ;
+
+%%
+
+
+  private Yylex lexer;
+
+
+  private int yylex () {
+    int yyl_return = -1;
+    try {
+      yylval = new ParserVal(0);
+      yyl_return = lexer.yylex();
+    }
+    catch (IOException e) {
+      System.err.println("IO error :"+e);
+    }
+    return yyl_return;
+  }
+
+
+  public void yyerror (String error) {
+    System.err.println ("Error: " + error);
+  }
+
+
+  public Parser(Reader r) {
+    lexer = new Yylex(r, this);
+  }
+
+
+  static boolean interactive;
+
+  public static void main(String args[]) throws IOException {
+    System.out.println("BYACC/Java with JFlex Calculator Demo");
+
+    Parser yyparser;
+    if ( args.length > 0 ) {
+      // parse a file
+      yyparser = new Parser(new FileReader(args[0]));
+    }
+    else {
+      // interactive mode
+      System.out.println("[Quit with CTRL-D]");
+      System.out.print("Expression: ");
+      interactive = true;
+	    yyparser = new Parser(new InputStreamReader(System.in));
+    }
+
+    yyparser.yyparse();
+    
+    if (interactive) {
+      System.out.println();
+      System.out.println("Have a nice day");
+    }
+  }
+
