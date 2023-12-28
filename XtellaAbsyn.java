@@ -446,3 +446,25 @@ class RegexConstNode extends ConstValueNode {
     return pattern;
   }
 }
+
+enum Delimiter {
+	SLASH,
+	ANGLE,    
+	PAREN,
+	CURLY,   
+	PERCENT,   
+}
+
+class DelimitedStringNode extends ConstValue {
+	private Delimiter delimLeft;
+	private Delimiter delimRight;
+	private AbsynListNode contents;
+
+	public DelimitedString(Delimiter delimLeft, Delimiter delimRight, AbsynListNode contents) {
+		this.delimLeft = delimLeft;
+		this.delimRight = delimRight;
+		this.contents = contents;
+	}
+	
+	public boolean delimitersMatch { return this.delimLeft == this.delimRight; }
+}
