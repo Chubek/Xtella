@@ -1,7 +1,39 @@
 import java.util.HashMap;
 import java.util.List;
 
-abstract class AbsynNode {}
+interface Visitor {
+    void visit(ProgramNode node);
+    void visit(StatementListNode node);
+    void visit(AssignStmtNode node);
+    void visit(ControlFlowStmtNode node);
+    void visit(ExecStmtNode node);
+    void visit(RWStmtNode node);
+    void visit(CloseStmtNode node);
+    void visit(OpenStmtNode node);
+    void visit(IfStmtNode node);
+    void visit(WhileStmtNode node);
+    void visit(ReturnStmtNode node);
+    void visit(ForStmtNode node);
+    void visit(MatchStmtNode node);
+    void visit(MatchCaseNode node);
+    void visit(BlockNode node);
+    void visit(ExpressionNode node);
+    void visit(CompoundExprNode node);
+    void visit(UnaryExprNode node);
+    void visit(IdentifierNode node);
+    void visit(LiteralNode node);
+    void visit(RWMode rwMode);
+    void visit(ConditionNode node);
+    void visit(ArrayNode node);
+    void visit(DelimitedStringNode node);
+    void visit(RegexConstNode node);
+}
+
+abstract class AbsynNode {
+	void accept(Visitor visitor) {
+		visitor.visit(this);
+	}
+}
 
 class AbsynListNode extends AbsynNode {
   private List<AbsynNode> nodes;
@@ -13,6 +45,7 @@ class AbsynListNode extends AbsynNode {
   public AbsynListNode(AbsynNode initNode) {
     this.nodes = new List.of(initNode);
   }
+
 }
 
 class ProgramNode extends AbsynNode {
@@ -495,4 +528,20 @@ class DelimitedStringNode extends ConstValue {
   public boolean delimitersMatch() {
     return this.delimLeft == this.delimRight;
   }
+}
+
+class InterpreterVisitor implements Visitor {
+    @Override
+    public void visit(ProgramNode node) {
+        node.getStatementList().accept(this);
+    }
+
+    @Override
+    public void visit(StatementListNode node) {
+        for (StatementNode statement : node.getStatements()) {
+            statement.accept(this);
+        }
+    }
+
+
 }
