@@ -33,6 +33,10 @@ abstract class AbsynNode {
 	void accept(Visitor visitor) {
 		visitor.visit(this);
 	}
+
+	abstract void interpretSelf(XtellaVM vm);
+
+	abstract int getOpcode();
 }
 
 class AbsynListNode extends AbsynNode {
@@ -46,6 +50,12 @@ class AbsynListNode extends AbsynNode {
     this.nodes = new List.of(initNode);
   }
 
+  @override
+  public void interpretSelf(XtellaVM vm) {
+	for (elementNode : this.nodes) {
+		elementNode.interpretSelf(vm);
+	}
+  }
 }
 
 class ProgramNode extends AbsynNode {
@@ -53,6 +63,11 @@ class ProgramNode extends AbsynNode {
 
   public ProgramNode(StatementListNode statementList) {
     this.statementList = statementList;
+  }
+
+  @override
+  public void interpretSelf(XtellaVM vm) {
+    this.statementList.interpretSelf(vm);
   }
 }
 
@@ -62,17 +77,31 @@ class StatementListNode extends AbsynNode {
   public StatementListNode(List<StatementNode> statements) {
     this.statements = statements;
   }
+
+  @override
+  public void interpretSelf(XtellaVM vm) {
+    for (statement : this.statements) {
+	statement.interpretSelf(vm);
+    }
+  }
 }
 
 abstract class StatementNode extends AbsynNode {}
 
 class AssignStmtNode extends StatementNode {
-  private String identifier;
+  private IdentifierNode identifier;
   private ExpressionNode expression;
 
-  public AssignStmtNode(String identifier, ExpressionNode expression) {
+  public AssignStmtNode(IdentifierNode identifier, ExpressionNode expression) {
     this.identifier = identifier;
     this.expression = expression;
+  }
+
+  @override
+  public void interpretSelf(XtellaVM vm) {
+    this.expression.interpretSelf(vm);
+    vm.addInstruction(identifier.getOpcode());
+    vm.addOperand(identifier.getValue());
   }
 }
 
@@ -86,6 +115,13 @@ class ControlFlowStmtNode extends StatementNode {
     this.ifBlock = ifBlock;
     this.elseBlock = elseBlock;
   }
+
+  @override
+  public void interpretSelf(XtellaVM vm) {
+    this.condition.interpretSelf(vm);
+    this.ifBlock.interpretSelf(vm);
+    this.elseBlock.interpretSelf(vm);
+  }
 }
 
 class ExecStmtNode extends StatementNode {
@@ -93,6 +129,12 @@ class ExecStmtNode extends StatementNode {
 
   public ExecStmtNode(String command) {
     this.command = command;
+  }
+
+  @override
+  public void interpretSelf(XtellaVM vm) {
+    vm.addInstruction(XtellaVM.EXEC_COMMAND);
+    vm.addOperand(this.command);
   }
 }
 
@@ -106,6 +148,13 @@ class RWStmtNode extends StatementNode {
     this.expression = expression;
     this.fileHandle = fileHandle;
   }
+
+  @override
+  public void interpretSelf(XtellaVM vm) {
+    this.rwMode.interpretSelf(vm);
+    this.expression.interpretSelf(vm);
+    vm.addOperand(this.fileHandle);
+  }
 }
 
 class CloseStmtNode extends StatementNode {
@@ -113,6 +162,12 @@ class CloseStmtNode extends StatementNode {
 
   public CloseStmtNode(String fileHandle) {
     this.fileHandle = fileHandle;
+  }
+
+  @override
+  public void interpretSelf(XtellaVM vm) {
+    vm.addInstruction(XtellaVM.CLOSE_FILE);
+    vm.addOperand(this.fileHandle);
   }
 }
 
@@ -141,7 +196,7 @@ class IfStmtNode extends ControlFlowStmtNode {
 }
 
 class WhileStmtNode extends ControlFlowStmtNode {
-  private ConditionNode condition;
+  private ConditionNode condition;
   private BlockNode whileBlock;
 
   public WhileStmtNode(ConditionNode condition, BlockNode whileBlock) {
@@ -224,9 +279,20 @@ class UnaryExprNode extends ExpressionNode {
 
 class IdentifierNode extends ExpressionNode {
   private String identifier;
+  private int opcode;
 
-  public IdentifierNode(String identifier) {
+  public IdentifierNode(String identifier, int opcode) {
     this.identifier = identifier;
+    this.opcode = opcode;
+  }
+
+  public String getValue() {
+    return this.identifier;
+  }
+
+  @override
+  public int getOpcode() {
+    return this.opcode;
   }
 }
 
@@ -531,12 +597,10 @@ class DelimitedStringNode extends ConstValue {
 }
 
 class InterpreterVisitor implements Visitor {
-    @Override
     public void visit(ProgramNode node) {
         node.getStatementList().accept(this);
     }
 
-    @Override
     public void visit(StatementListNode node) {
         for (StatementNode statement : node.getStatements()) {
             statement.accept(this);
