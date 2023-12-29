@@ -1,15 +1,18 @@
-7import java.util.HashMap;
+import java.util.HashMap;
 import java.util.List;
 
 abstract class AbsynNode {}
 
-
 class AbsynListNode extends AbsynNode {
-	private List<AbsynNode> nodes;
+  private List<AbsynNode> nodes;
 
-	public void addToList(AbsynNode node) { this.nodes.add(node); }
+  public void addToList(AbsynNode node) {
+    this.nodes.add(node);
+  }
 
-	public AbsynListNode(AbsynNode initNode) { this.nodes = new List.of(initNode); }
+  public AbsynListNode(AbsynNode initNode) {
+    this.nodes = new List.of(initNode);
+  }
 }
 
 class ProgramNode extends AbsynNode {
@@ -444,7 +447,6 @@ class StringConstNode extends ConstValueNode {
   }
 }
 
-
 class FStringConstNode extends ConstValueNode {
   private AbsynListNode value;
 
@@ -472,23 +474,25 @@ class RegexConstNode extends ConstValueNode {
 }
 
 enum Delimiter {
-	SLASH,
-	ANGLE,    
-	PAREN,
-	CURLY,   
-	PERCENT,   
+  SLASH,
+  ANGLE,
+  PAREN,
+  CURLY,
+  PERCENT,
 }
 
 class DelimitedStringNode extends ConstValue {
-	private Delimiter delimLeft;
-	private Delimiter delimRight;
-	private AbsynListNode contents;
+  private Delimiter delimLeft;
+  private Delimiter delimRight;
+  private AbsynListNode contents;
 
-	public DelimitedString(Delimiter delimLeft, Delimiter delimRight, AbsynListNode contents) {
-		this.delimLeft = delimLeft;
-		this.delimRight = delimRight;
-		this.contents = contents;
-	}
-	
-	public boolean delimitersMatch { return this.delimLeft == this.delimRight; }
+  public DelimitedString(Delimiter delimLeft, Delimiter delimRight, AbsynListNode contents) {
+    this.delimLeft = delimLeft;
+    this.delimRight = delimRight;
+    this.contents = contents;
+  }
+
+  public boolean delimitersMatch() {
+    return this.delimLeft == this.delimRight;
+  }
 }
