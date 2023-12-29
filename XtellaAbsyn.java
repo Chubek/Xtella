@@ -1,7 +1,16 @@
-import java.util.HashMap;
+7import java.util.HashMap;
 import java.util.List;
 
 abstract class AbsynNode {}
+
+
+class AbsynListNode extends AbsynNode {
+	private List<AbsynNode> nodes;
+
+	public void addToList(AbsynNode node) { this.nodes.add(node); }
+
+	public AbsynListNode(AbsynNode initNode) { this.nodes = new List.of(initNode); }
+}
 
 class ProgramNode extends AbsynNode {
   private StatementListNode statementList;
@@ -361,6 +370,7 @@ class ConstValueNode extends ExpressionNode {
     EXEC_COMMAND,
     NUMBER,
     STRING,
+    FSTRING,
     REGEX
   }
 
@@ -430,6 +440,20 @@ class StringConstNode extends ConstValueNode {
   }
 
   public String getValue() {
+    return value;
+  }
+}
+
+
+class FStringConstNode extends ConstValueNode {
+  private AbsynListNode value;
+
+  public FStringConstNode(AbsynListNode value) {
+    super(ConstValueType.FSTRING);
+    this.value = value;
+  }
+
+  public AbsynListNode getValue() {
     return value;
   }
 }
