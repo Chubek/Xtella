@@ -138,10 +138,17 @@ class ExecStmtNode extends StatementNode {
   }
 }
 
+enum RWMode {
+	READING,
+	WRITING,
+	APPENDING,
+	READ_AND_WRITE,
+}
+
 class RWStmtNode extends StatementNode {
   private RWMode rwMode;
   private ExpressionNode expression;
-  private String fileHandle;
+  private IdentifierNode fileHandle;
 
   public RWStmtNode(RWMode rwMode, ExpressionNode expression, String fileHandle) {
     this.rwMode = rwMode;
@@ -151,9 +158,22 @@ class RWStmtNode extends StatementNode {
 
   @override
   public void interpretSelf(XtellaVM vm) {
-    this.rwMode.interpretSelf(vm);
+    switch (this.rwMode) {
+	case RWMode.READING:
+		vm.addInstruction(XtellaVM.READ_FILE);
+		break;
+	case RWMode.WRITING:
+		vm.addInstruction(XtellaVM.WRITE_FILE);
+		break;
+	case RWMode.APPENDING:
+		vm.addInstruction(XtellaVM.APPEND_FILE);
+		break;
+	default:
+		break;
+    }
+
     this.expression.interpretSelf(vm);
-    vm.addOperand(this.fileHandle);
+    vm.addOperand(this.fileHandle.getValue());
   }
 }
 
@@ -180,6 +200,30 @@ class OpenStmtNode extends StatementNode {
     this.fileName = fileName;
     this.rwMode = rwMode;
     this.fileHandle = fileHandle;
+  }
+
+  @override
+  public void interpretSelf(XtellaVM vm) {
+       switch (this.rwMode) {
+	case RWMode.READING:
+		vm.addInstruction(XtellaVM.OPEN_FILE_FOR_READING);
+		break;
+	case RWMode.WRITING:
+		vm.addInstruction(XtellaVM.OPEN_FILE_FOR_WRITING);
+		break;
+	case RWMode.APPENDING:
+		vm.addInstruction(XtellaVM.OPEN_FILE_FOR_WRITING);
+		break;
+	case RWMode.READ_AND_WRITE:
+		vm.addInstruction(XtellaVM.OPEN_FILE_FOR_READING_AND_WRITING);
+		break;
+	default:
+		break;
+    }
+
+    vm.addOperand(this.fileName);
+    vm.addOperand(this.fileHandle.getValue());
+
   }
 }
 
