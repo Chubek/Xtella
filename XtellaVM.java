@@ -83,6 +83,14 @@ public class XtellaVM {
     this.framePointer = 0;
   }
 
+  public static void addInstruction(int opcode) { 
+    this.instructionStack.push(opcode);
+  }
+
+  public static void addOperand(Object operand) {
+    this.operandStack.push(operand);
+  }
+
   public static int getProgramCounter() {
     return this.programCounter;
   }
@@ -532,18 +540,27 @@ public class XtellaVM {
     this.framePointer++;
   }
 
-  private void executeReturn() {
-    if (this.framePointer == 0) {
-      throw new IllegalStateException("Cannot RETURN from the main frame");
-    }
+  public void executeReturn() {
+        if (operandStack.size() < 1) {
+            throw new IllegalStateException("Not enough operands on the stack for RETURN");
+        }
 
-    this.framePointer--;
-    this.programCounter = 0;
+        Object returnValue = operandStack.pop();
+
+        programCounter = instructionStack.pop();
+        stackPointer = framePointer;
+        framePointer = instructionStack.pop();
+
+        scopes.remove(scopes.size() - 1);
+        scopeNumber--;
+
+        operandStack.push(returnValue);
+    
   }
 
   private void executeJump() {
 
-    int targetIndex = (int) this.operandStack.get(this.programCounter);
+    int targetIndex = (int) this.operandStack.pop();
 
     this.programCounter = targetIndex;
   }
@@ -552,7 +569,7 @@ public class XtellaVM {
 
     boolean condition = (boolean) this.operandStack.pop();
 
-    int targetIndex = (int) this.operandStack.get(this.programCounter);
+    int targetIndex = (int) this.operandStack.pop();
 
     if (condition) {
 
@@ -567,7 +584,7 @@ public class XtellaVM {
 
     boolean condition = (boolean) this.operandStack.pop();
 
-    int targetIndex = (int) this.operandStack.get(this.programCounter);
+    int targetIndex = (int) this.operandStack.pop();
 
     if (!condition) {
 
@@ -754,7 +771,7 @@ public class XtellaVM {
       executeVM(functionAddress);
     }
 
-    dropFrame(scopeId);
+    executeReturn();
   }
 
   private void executeGetVarArg() {
