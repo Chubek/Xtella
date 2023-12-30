@@ -2,41 +2,65 @@ import java.util.HashMap;
 import java.util.List;
 
 interface Visitor {
-    void visit(ProgramNode node);
-    void visit(StatementListNode node);
-    void visit(AssignStmtNode node);
-    void visit(ControlFlowStmtNode node);
-    void visit(ExecStmtNode node);
-    void visit(RWStmtNode node);
-    void visit(CloseStmtNode node);
-    void visit(OpenStmtNode node);
-    void visit(IfStmtNode node);
-    void visit(WhileStmtNode node);
-    void visit(ReturnStmtNode node);
-    void visit(ForStmtNode node);
-    void visit(MatchStmtNode node);
-    void visit(MatchCaseNode node);
-    void visit(BlockNode node);
-    void visit(ExpressionNode node);
-    void visit(CompoundExprNode node);
-    void visit(UnaryExprNode node);
-    void visit(IdentifierNode node);
-    void visit(LiteralNode node);
-    void visit(RWMode rwMode);
-    void visit(ConditionNode node);
-    void visit(ArrayNode node);
-    void visit(DelimitedStringNode node);
-    void visit(RegexConstNode node);
+  void visit(ProgramNode node);
+
+  void visit(StatementListNode node);
+
+  void visit(AssignStmtNode node);
+
+  void visit(ControlFlowStmtNode node);
+
+  void visit(ExecStmtNode node);
+
+  void visit(RWStmtNode node);
+
+  void visit(CloseStmtNode node);
+
+  void visit(OpenStmtNode node);
+
+  void visit(IfStmtNode node);
+
+  void visit(WhileStmtNode node);
+
+  void visit(ReturnStmtNode node);
+
+  void visit(ForStmtNode node);
+
+  void visit(MatchStmtNode node);
+
+  void visit(MatchCaseNode node);
+
+  void visit(BlockNode node);
+
+  void visit(ExpressionNode node);
+
+  void visit(CompoundExprNode node);
+
+  void visit(UnaryExprNode node);
+
+  void visit(IdentifierNode node);
+
+  void visit(LiteralNode node);
+
+  void visit(RWMode rwMode);
+
+  void visit(ConditionNode node);
+
+  void visit(ArrayNode node);
+
+  void visit(DelimitedStringNode node);
+
+  void visit(RegexConstNode node);
 }
 
 abstract class AbsynNode {
-	void accept(Visitor visitor) {
-		visitor.visit(this);
-	}
+  void accept(Visitor visitor) {
+    visitor.visit(this);
+  }
 
-	abstract void interpretSelf(XtellaVM vm);
+  abstract void interpretSelf(XtellaVM vm);
 
-	abstract int getOpcode();
+  abstract int getOpcode();
 }
 
 class AbsynListNode extends AbsynNode {
@@ -52,9 +76,9 @@ class AbsynListNode extends AbsynNode {
 
   @override
   public void interpretSelf(XtellaVM vm) {
-	for (elementNode : this.nodes) {
-		elementNode.interpretSelf(vm);
-	}
+    for (AbsynNode elementNode : this.nodes) {
+      elementNode.interpretSelf(vm);
+    }
   }
 }
 
@@ -80,8 +104,8 @@ class StatementListNode extends AbsynNode {
 
   @override
   public void interpretSelf(XtellaVM vm) {
-    for (statement : this.statements) {
-	statement.interpretSelf(vm);
+    for (StatementNode statement : this.statements) {
+      statement.interpretSelf(vm);
     }
   }
 }
@@ -139,10 +163,10 @@ class ExecStmtNode extends StatementNode {
 }
 
 enum RWMode {
-	READING,
-	WRITING,
-	APPENDING,
-	READ_AND_WRITE,
+  READING,
+  WRITING,
+  APPENDING,
+  READ_AND_WRITE,
 }
 
 class RWStmtNode extends StatementNode {
@@ -159,17 +183,17 @@ class RWStmtNode extends StatementNode {
   @override
   public void interpretSelf(XtellaVM vm) {
     switch (this.rwMode) {
-	case RWMode.READING:
-		vm.addInstruction(XtellaVM.READ_FILE);
-		break;
-	case RWMode.WRITING:
-		vm.addInstruction(XtellaVM.WRITE_FILE);
-		break;
-	case RWMode.APPENDING:
-		vm.addInstruction(XtellaVM.APPEND_FILE);
-		break;
-	default:
-		break;
+      case RWMode.READING:
+        vm.addInstruction(XtellaVM.READ_FILE);
+        break;
+      case RWMode.WRITING:
+        vm.addInstruction(XtellaVM.WRITE_FILE);
+        break;
+      case RWMode.APPENDING:
+        vm.addInstruction(XtellaVM.APPEND_FILE);
+        break;
+      default:
+        break;
     }
 
     this.expression.interpretSelf(vm);
@@ -204,26 +228,25 @@ class OpenStmtNode extends StatementNode {
 
   @override
   public void interpretSelf(XtellaVM vm) {
-       switch (this.rwMode) {
-	case RWMode.READING:
-		vm.addInstruction(XtellaVM.OPEN_FILE_FOR_READING);
-		break;
-	case RWMode.WRITING:
-		vm.addInstruction(XtellaVM.OPEN_FILE_FOR_WRITING);
-		break;
-	case RWMode.APPENDING:
-		vm.addInstruction(XtellaVM.OPEN_FILE_FOR_WRITING);
-		break;
-	case RWMode.READ_AND_WRITE:
-		vm.addInstruction(XtellaVM.OPEN_FILE_FOR_READING_AND_WRITING);
-		break;
-	default:
-		break;
+    switch (this.rwMode) {
+      case RWMode.READING:
+        vm.addInstruction(XtellaVM.OPEN_FILE_FOR_READING);
+        break;
+      case RWMode.WRITING:
+        vm.addInstruction(XtellaVM.OPEN_FILE_FOR_WRITING);
+        break;
+      case RWMode.APPENDING:
+        vm.addInstruction(XtellaVM.OPEN_FILE_FOR_WRITING);
+        break;
+      case RWMode.READ_AND_WRITE:
+        vm.addInstruction(XtellaVM.OPEN_FILE_FOR_READING_AND_WRITING);
+        break;
+      default:
+        break;
     }
 
     vm.addOperand(this.fileName);
     vm.addOperand(this.fileHandle.getValue());
-
   }
 }
 
@@ -240,7 +263,7 @@ class IfStmtNode extends ControlFlowStmtNode {
 }
 
 class WhileStmtNode extends ControlFlowStmtNode {
-  private ConditionNode condition;
+  private ConditionNode condition;
   private BlockNode whileBlock;
 
   public WhileStmtNode(ConditionNode condition, BlockNode whileBlock) {
@@ -641,15 +664,13 @@ class DelimitedStringNode extends ConstValue {
 }
 
 class InterpreterVisitor implements Visitor {
-    public void visit(ProgramNode node) {
-        node.getStatementList().accept(this);
+  public void visit(ProgramNode node) {
+    node.getStatementList().accept(this);
+  }
+
+  public void visit(StatementListNode node) {
+    for (StatementNode statement : node.getStatements()) {
+      statement.accept(this);
     }
-
-    public void visit(StatementListNode node) {
-        for (StatementNode statement : node.getStatements()) {
-            statement.accept(this);
-        }
-    }
-
-
+  }
 }
