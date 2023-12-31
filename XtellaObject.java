@@ -95,18 +95,16 @@ public class XtellaObject {
     if (type == XtellaType.INTEGER) {
       addMethod("assignment", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
       addBinaryOpMethods();
-      addMethod("unaryOp", new XtellaObject(XtellaType.METHOD, new XtellaByteCodeChunk()));
+      addUnaryOpMethods();
     } else if (type == XtellaType.FLOAT) {
       addMethod("assignment", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
-      addMethod("binaryOp", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
-      addMethod("unaryOp", new XtellaObject(XtellaType.METHOD, new XtellaByteCodeChunk()));
+      addBinaryOpMethods();
+      addUnaryOpMethods();
     } else if (type == XtellaType.CLOSURE) {
       addMethod("assignment", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
-      addMethod("binaryOp", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
-      addMethod("unaryOp", new XtellaObject(XtellaType.METHOD, new XtellaByteCodeChunk()));
     } else if (type == XtellaType.STRING) {
       addMethod("assignment", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
-      addMethod("binaryOp", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
+      addBinaryOpMethods();
     } else if (type == XtellaType.REGEX) {
       addMethod("match", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
       addMethod("replace", new XtellaObject(XtellaType.METHOD, new XtellaBytecodeChunk(), this));
