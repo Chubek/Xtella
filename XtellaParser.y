@@ -10,7 +10,7 @@
 %token <double> FLOAT_NUM
 %token <String> CHARSEQ_WITH_NEWLINE CHARSEQ_WITHOUT_NEWLINE
 
-%token LET FILEHANDLE
+%token LET IO_IDENTIFIER
 %token EQUALS BECOMES
 %token PERCENT DOLLAR SQUOTE DQUOTE BACKTICK 
 %token PIPE SLASH NEWLINE LETTER DOLLAR_LCURLY TRIPLE_QUOTE DOUBLE_COLON
@@ -95,7 +95,7 @@ statement         : assign_stmt                      { $$ = $1; }
                    | function_stmt                    { $$ = $1; }
                    | rw_stmt                         { $$ = $1; }
                    | exec_stmt                       { $$ = $1; }
-                   | open_stmt                       { $$ = $1; }
+                  4 | open_stmt                       { $$ = $1; }
                    | close_stmt                      { $$ = $1; }
 
 assign_stmt       : non_indexed_ident BECOMES expression
@@ -113,21 +113,37 @@ control_flow_stmt : if_stmt                          { $$ = $1; }
 exec_stmt         : EXEC DOUBLE_LT CHARSEQ_WITH_NEWLINE DOUBLE_GT
                     { $$ = new ExecStmtNode($3); }
 
-rw_stmt           : READ FILEHANDLE INTO IO_IDENTIFIER
-                    { $$ = new RWStmtNode(RWMode.READING, new IdentifierNode($5), $3); }
+rw_stmt           : READ IO_IDENTIFIER INTO IDENTIFIER
+                    { 
+		    	$$ = new RWStmtNode(RWMode.READING, 
+					new IdentifierNode($2),
+					new IdentifierNode($4)); 
+		    }
                   | READ string_const INTO IO_IDENTIFIER
-                    { $$ = new RWStmtNode(RWMode.READING, new StringConstNode($3)); }
-                  | WRITE expression FILEHANDLE FILEHANDLE
-                    { $$ = new RWStmtNode(RWMode.WRITING, $2, $4); }
-                  | APPEND expression INTO FILEHANDLE
-                    { $$ = new RWStmtNode(RWMode.APPENDING, $2, $4); }
+                    { 
+		        $$ = new RWStmtNode(RWMode.READING, 
+					$2,
+					new IdentifierNode($4)); 
+		    }
+                  | WRITE expression INTO IO_IDENTIFIER
+                    { 
+		        $$ = new RWStmtNode(RWMode.WRITING, 
+					$2, 
+					new IdentifierNode($4)); 
+		    }
+                  | APPEND expression INTO IO_IDENTIFIER
+                    { 
+		        $$ = new RWStmtNode(RWMode.APPENDING, 
+					$2,
+					new IdentifierNode($4)); 
+		    }
 
-close_stmt        : CLOSE FILEHANDLE
+close_stmt        : CLOSE IO_IDENTIFIER
                     { $$ = new CloseStmtNode($2); }
 
 open_stmt         : OPEN string_const FOR rw_mode
                     { $$ = new OpenStmtNode($2, $4, null); }
-                  | OPEN string_const FOR rw_mode AS FILEHANDLE
+                  | OPEN string_const FOR rw_mode AS IO_IDENTIFIER
                     { $$ = new OpenStmtNode($2, $4, $6); }
 
 rw_mode           : READING                          { $$ = RWMode.READING; }

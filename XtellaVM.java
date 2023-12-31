@@ -67,6 +67,7 @@ public class XtellaVM {
   private Stack<Object> operandStack;
   private List<Object> varArgs;
   private Map<String, Object> globalScope;
+  private Map<String, XtellaFunction> functionTable;
   private List<Map<String, Object>> scopes;
   private int programCounter;
   private int stackPointer;
@@ -728,50 +729,13 @@ public class XtellaVM {
 
     String functionName = (String) this.operandStack.pop();
 
-    int functionAddress = this.globalScope.get(functionName);
-    List<String> functionParams = this.globalScope.get(functionName + "_params");
+    XtellaFunction xtellaFunction = functionTable.get(functionName);
 
-    int scopeId = newFrame();
-
-    for (int i = 0; i <= functionParams.size(); i++) {
-      String argumentId = functionParams[i];
-      Object argument = this.operandStack.pop();
-
-      this.operandStack.push(argument);
-      this.operandStack.push(argumentId);
-
-      executeStoreVariable();
-    }
-
-    int varArgNum = (int) this.operandStack.pop();
-
-    if (varArgNum > 0) {
-      this.varArgs.clear();
-      while (--varArgNum) {
-        this.varArgs.add(operandstack.pop());
-      }
-    }
-
-    boolean runThreaded = (boolean) stack.pop();
-    boolean runImmediately = (boolean) stack.pop();
-    String threadIdentifier = (String) stack.pop();
-
-    if (runThreaded) {
-      Thread t =
-          new Thread(
-              () -> {
-                executeVM(functionAddress);
-              });
-      if (runImmediately) {
-        t.start();
-      } else {
-        this.globalScope.put(threadIdentifier, t);
-      }
-    } else {
-      executeVM(functionAddress);
-    }
-
-    executeReturn();
+    if (xtellaFunction != null) {
+      xtellaFunction.execute(this);
+     } else {
+       throw new IllegalArgumentException("Function not found: " + functionName);
+     }
   }
 
   private void executeGetVarArg() {
@@ -1083,5 +1047,4 @@ public class XtellaVM {
     this.framePointer++;
   }
 
-  public static void executeVM(int this.programCounter) {}
 }
