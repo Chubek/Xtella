@@ -38,37 +38,33 @@ public class XtellaVM {
   public static final int JUMP = 25;
   public static final int JUMP_IF_TRUE = 26;
   public static final int JUMP_IF_FALSE = 27;
-  public static final int CALL_FUNCTION = 28;
-  public static final int LOAD_FUNCTION = 29;
-  public static final int RETURN = 30;
-  public static final int LOAD_VARIABLE = 31;
-  public static final int STORE_VARIABLE = 32;
-  public static final int LOAD_VARIABLE_FROM_ARRAY = 33;
-  public static final int STORE_VARIABLE_INTO_ARRAY = 34;
-  public static final int LOAD_VARIABLE_FROM_HASHMAP = 35;
-  public static final int STORE_VARIABLE_INTO_HASHMAP = 36;
-  public static final int GET_VARARG = 37;
-  public static final int REGEX_MATCH = 38;
-  public static final int EXEC_COMMAND = 39;
-  public static final int MAKE_VARIANT = 40;
-  public static final int RUN_THREAD = 41;
-  public static final int OPEN_FILE_FOR_READING = 42;
-  public static final int OPEN_FILE_FOR_WRITING = 43;
-  public static final int OPEN_FILE_FOR_READING_AND_WRITING = 44;
-  public static final int CLOSE_FILE = 45;
-  public static final int READ_FILE = 46;
-  public static final int WRITE_FILE = 47;
-  public static final int APPEND_FILE = 48;
-  public static final int READ_LINE_FROM_FILE = 49;
-  public static final int SWAP_VALUE = 50;
-  public static final int DUPLICATE_VALUE = 51;
+  public static final int RETURN = 28;
+  public static final int LOAD_VARIABLE = 29;
+  public static final int STORE_VARIABLE = 30;
+  public static final int LOAD_VARIABLE_FROM_ARRAY = 31;
+  public static final int STORE_VARIABLE_INTO_ARRAY = 32;
+  public static final int LOAD_VARIABLE_FROM_HASHMAP = 33;
+  public static final int STORE_VARIABLE_INTO_HASHMAP = 34;
+  public static final int REGEX_MATCH = 36;
+  public static final int EXEC_COMMAND = 37;
+  public static final int MAKE_VARIANT = 38;
+  public static final int RUN_THREAD = 39;
+  public static final int OPEN_FILE_FOR_READING = 40;
+  public static final int OPEN_FILE_FOR_WRITING = 41;
+  public static final int OPEN_FILE_FOR_READING_AND_WRITING = 42;
+  public static final int CLOSE_FILE = 43;
+  public static final int READ_FILE = 44;
+  public static final int WRITE_FILE = 45;
+  public static final int APPEND_FILE = 46;
+  public static final int READ_LINE_FROM_FILE = 47;
+  public static final int SWAP_VALUE = 48;
+  public static final int DUPLICATE_VALUE = 49;
 
   private Stack<int> instructionStack;
   private Stack<Object> operandStack;
-  private List<Object> varArgs;
   private Map<String, Object> globalScope;
   private List<Map<String, Object>> scopes;
-  private int programCounter;
+  private int instructionPointer;
   private int stackPointer;
   private int framePointer;
   private int scopeNumber;
@@ -78,13 +74,13 @@ public class XtellaVM {
     this.instructionStack = new Stack<>();
     this.operandStack = new Stack<>();
     this.scopes = new ArrayList<>();
-    this.programCounter = 0;
+    this.instructionPointer = 0;
     this.stackPointer = 0;
     this.framePointer = 0;
   }
 
   public static int getProgramCounter() {
-    return this.programCounter;
+    return this.instructionPointer;
   }
 
   public static int getStackPointer() {
@@ -110,8 +106,8 @@ public class XtellaVM {
     return this.scopeNumber++;
   }
 
-  private static void dropFrame(int rmIndex) {
-    this.scopes.remove(rmIndex);
+  private static void dropFrame() {
+    this.scopes.remove(this.scopesNumber - 1);
     this.stackPointer += this.framePointer;
     this.scopesNumber--;
   }
@@ -537,44 +533,42 @@ public class XtellaVM {
       throw new IllegalStateException("Cannot RETURN from the main frame");
     }
 
-    this.framePointer--;
-    this.programCounter = 0;
+    int returnIP = (int) this.operandStack.pop();
+    this.instructionPointer = returnIP;
+
+    dropFrame();
   }
 
   private void executeJump() {
-
-    int targetIndex = (int) this.operandStack.get(this.programCounter);
-
-    this.programCounter = targetIndex;
+    int targetIndex = (int) this.operandStack.pop();
+    this.instructionPointer = targetIndex;
   }
 
   private void executeJumpIfTrue() {
 
     boolean condition = (boolean) this.operandStack.pop();
-
-    int targetIndex = (int) this.operandStack.get(this.programCounter);
+    int targetIndex = (int) this.operandStack.pop();
 
     if (condition) {
 
-      this.programCounter = targetIndex;
+      this.instructionPointer = targetIndex;
     } else {
 
-      this.programCounter++;
+      this.instructionPointer++;
     }
   }
 
   private void executeJumpIfFalse() {
 
     boolean condition = (boolean) this.operandStack.pop();
-
-    int targetIndex = (int) this.operandStack.get(this.programCounter);
+    int targetIndex = (int) this.operandStack.pop();
 
     if (!condition) {
 
-      this.programCounter = targetIndex;
+      this.instructionPointer = targetIndex;
     } else {
 
-      this.programCounter++;
+      this.instructionPointer++;
     }
   }
 
@@ -690,89 +684,6 @@ public class XtellaVM {
     this.framePointer++;
   }
 
-  private void executeLoadFunction() {
-    if (this.operandStack.size() < 1) {
-      throw new IllegalStateException("Not enough operands on the stack for LOAD_FUNCTION");
-    }
-
-    String functionName = (String) this.operandStack.pop();
-    List<String> functionParams = (List<String>) this.operandStack.pop();
-
-    this.globalScope.put(functionName, this.programCounter);
-    this.globalScope.put(functionName + "_params", functionParams);
-
-    this.programCounter++;
-  }
-
-  private void executeCallFunction() {
-    if (this.operandStack.size() < 1) {
-      throw new IllegalStateException("Invalid state for CALL_FUNCTION");
-    }
-
-    String functionName = (String) this.operandStack.pop();
-
-    int functionAddress = this.globalScope.get(functionName);
-    List<String> functionParams = this.globalScope.get(functionName + "_params");
-
-    int scopeId = newFrame();
-
-    for (int i = 0; i <= functionParams.size(); i++) {
-      String argumentId = functionParams[i];
-      Object argument = this.operandStack.pop();
-
-      this.operandStack.push(argument);
-      this.operandStack.push(argumentId);
-
-      executeStoreVariable();
-    }
-
-    int varArgNum = (int) this.operandStack.pop();
-
-    if (varArgNum > 0) {
-      this.varArgs.clear();
-      while (--varArgNum) {
-        this.varArgs.add(operandstack.pop());
-      }
-    }
-
-    boolean runThreaded = (boolean) stack.pop();
-    boolean runImmediately = (boolean) stack.pop();
-    String threadIdentifier = (String) stack.pop();
-
-    if (runThreaded) {
-      Thread t =
-          new Thread(
-              () -> {
-                executeVM(functionAddress);
-              });
-      if (runImmediately) {
-        t.start();
-      } else {
-        this.globalScope.put(threadIdentifier, t);
-      }
-    } else {
-      executeVM(functionAddress);
-    }
-
-    dropFrame(scopeId);
-  }
-
-  private void executeGetVarArg() {
-    if (this.operandStack.size() < 1) {
-      throw new IllegalStateException("Not enough operands for GET_VARARG");
-    }
-
-    int varArgIndex = (int) this.operandStack.pop();
-
-    if (varArgIndex >= this.varArgs.size()) {
-      throw new IllegalStateException("Number of requested variable argument is illegal");
-    }
-
-    this.operandStack.push(varArg.get(varArgIndex));
-
-    this.framePointer++;
-  }
-
   private void executeRegexMatch() {
     if (this.operandStack.size() < 2) {
       throw new IllegalStateException("Not enough operands on the stack for REGEX_MATCH");
@@ -834,8 +745,6 @@ public class XtellaVM {
     }
 
     this.globalScope.put(variantName, params);
-
-    this.programCounter++;
   }
 
   private void executeRunThread() {
@@ -1065,6 +974,4 @@ public class XtellaVM {
 
     this.framePointer++;
   }
-
-  public static void executeVM(int this.programCounter) {}
 }
